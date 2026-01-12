@@ -1,0 +1,298 @@
+openapi: 3.0.3
+info:
+  title: Sbarter API - Game Studio Integration (Server Implementation)
+  version: 1.0.0
+  description: >
+    This OpenAPI describes the endpoints exposed by Sbarter that the Game Studio calls:
+    - In-app linking result callback
+    - Match result webhooks
+    It also documents the OAuth2 Client Credentials token endpoint (Keycloak).
+
+servers:
+  - url: https://api.sbarter.com
+    description: Sbarter API
+  - url: https://id.sbarter.com
+    description: Sbarter Identity Provider (Keycloak)
+
+tags:
+  - name: VGP - In App Confirmation
+    description: Game Studio -> Sbarter callback for account linking result
+  - name: VGP - DeepLink
+    description: Game Studio -> Sbarter deep link generation (opens Sbarter mobile app)
+  - name: Webhook
+    description: Game Studio -> Sbarter webhook endpoints (game results)
+  - name: OAuth 2.0 Client Credentials
+    description: Token issuance endpoint (Keycloak)
+
+paths:
+  /v1/linking/in-app/callback:
+    post:
+      tags: [VGP - In App Confirmation]
+      summary: Linking result callback (accepted/rejected/expired)
+      description: >
+        Game Studio calls this endpoint after the user confirms or rejects linking inside the game.
+        This callback is the FINAL decision for the given requestId.
+
+        Authorization: Bearer <access_token>
+      security:
+        - OAuth2ClientCredentials:
+            - linking.callback.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InAppLinkingResultCallback'
+      responses:
+        "202":
+          description: Callback accepted for processing
+        "400":
+          description: Invalid payload
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: Forbidden
+        "409":
+          description: Request already processed (idempotency)
+        "500":
+          description: Internal server error
+
+
+  /v1/linking/deeplink/generate:
+    post:
+      tags: [VGP - DeepLink]
+      summary: Generate confirmation deep link
+      description: >
+        Generates a one-time confirmation deep link that opens the Sbarter mobile application.
+
+        The Game Studio typically calls this endpoint, then delivers the returned deepLink
+        to the user via push notification / in-app message / email.
+
+        When the user follows the deepLink, the Sbarter app opens and Sbarter finalizes the linking flow.
+        Authorization: Bearer <access_token>
+      security:
+        - OAuth2ClientCredentials:
+            - linking.deeplink.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeepLinkGenerateRequest'
+            example:
+              requestId: "a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
+              gameId: "some-game-id"
+              ruleId: "rule-123"
+              gameUserId: "user123456"
+              expiresAt: "2025-12-12T13:00:00Z"
+      responses:
+        "200":
+          description: Deep link generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeepLinkGenerateResponse'
+              example:
+                linkId: "dl_01HZZZ8YQ2K3F7Z9P8"
+                deepLink: "sbarter://linking/confirm/dl_01HZZZ8YQ2K3F7Z9P8"
+                expiresAt: "2025-12-12T13:00:00Z"
+        "400":
+          description: Invalid request
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+
+  /v1/webhooks/game-studio/match-result:
+    post:
+      tags: [Webhook]
+      summary: Receive match result webhook
+      description: >
+        Game Studio sends match results for a previously created match/session.
+        Authorization: Bearer <access_token>
+      security:
+        - OAuth2ClientCredentials:
+            - webhook.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameResultWebhookPayload'
+      responses:
+        "202":
+          description: Webhook accepted
+        "400":
+          description: Invalid payload
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+
+  /realms/studio_investor/protocol/openid-connect/token:
+    post:
+      tags: [OAuth 2.0 Client Credentials]
+      summary: Obtain Access Token (Client Credentials)
+      description: >
+        Issues an access token using OAuth 2.0 Client Credentials Grant.
+        The returned token_type is "Bearer".
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClientCredentialsTokenRequest'
+            examples:
+              client_credentials:
+                value:
+                  grant_type: client_credentials
+                  client_id: "<client_id>"
+                  client_secret: "<client_secret>"
+      responses:
+        "200":
+          description: Token successfully issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              examples:
+                ok:
+                  value:
+                    access_token: "<jwt>"
+                    token_type: "Bearer"
+                    expires_in: 300
+        "400":
+          description: Invalid request
+        "401":
+          description: Invalid client credentials
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+
+components:
+  securitySchemes:
+    OAuth2ClientCredentials:
+      type: oauth2
+      description: >
+        OAuth 2.0 Client Credentials Grant used by Game Studio when calling Sbarter callbacks/webhooks.
+        clientId/clientSecret are managed in Keycloak and bound to a specific studio/game.
+      flows:
+        clientCredentials:
+          tokenUrl: https://id.sbarter.com/realms/sbarter/protocol/openid-connect/token
+          scopes:
+            linking.callback.write: Send in-app linking result callback to Sbarter.
+            webhook.write: Send match result webhooks to Sbarter.
+
+  schemas:
+    InAppLinkingResultCallback:
+      type: object
+      required: [requestId, gameId, gameUserId, status, confirmedAt]
+      properties:
+        requestId:
+          type: string
+          example: "a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
+        providerGameId:
+          type: string
+          example: "some-game-id"
+        providerUserId:
+          type: string
+          example: "user123456"
+        internalId:
+          type: string
+          example: "sbarter-12345-kudos"
+        status:
+          type: string
+          enum: [accepted, rejected, expired]
+          example: "accepted"
+        confirmedAt:
+          type: string
+          format: date-time
+          example: "2025-12-12T12:45:10Z"
+
+    GameResultStatus:
+      type: string
+      enum: [completed, pending, cancelled, unknown]
+
+    PlayerGameResult:
+      type: object
+      required: [gameUserId, outcome]
+      properties:
+        providerUserId:
+          type: string
+          example: "Player#1234"
+        internalId:
+          type: string
+          nullable: true
+          example: "sbarter-user-12345"
+        outcome:
+          type: string
+          enum: [win, loss, draw, unknown]
+          example: "win"
+
+    GameResultWebhookPayload:
+      type: object
+      required: [gameId, sessionId, matchId, status, players]
+      properties:
+        providerGameId:
+          type: string
+          example: "real boxing 3"
+        sessionId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        matchId:
+          type: string
+          example: "real-bxoing-match-abc-123"
+        status:
+          $ref: '#/components/schemas/GameResultStatus'
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerGameResult'
+
+    ClientCredentialsTokenRequest:
+      type: object
+      required: [grant_type, client_id, client_secret]
+      properties:
+        grant_type:
+          type: string
+          enum: [client_credentials]
+          example: client_credentials
+        client_id:
+          type: string
+          example: "<client_id>"
+        client_secret:
+          type: string
+          example: "<client_secret>"
+
+    TokenResponse:
+      type: object
+      required: [access_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+          example: "<jwt>"
+        token_type:
+          type: string
+          enum: [Bearer]
+          example: Bearer
+        expires_in:
+          type: integer
+          example: 300
+        scope:
+          type: string
+          nullable: true
+          example: "webhook.write"
