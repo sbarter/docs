@@ -55,7 +55,7 @@
 
     <header class="api-header">
       <div class="header-left">
-        <img src="logo.png" alt="Company Logo" class="logo">
+        <img src="logo-sbarter-color.svg" alt="Sbarter Logo" class="logo">
         <h1>Developer Hub</h1>
       </div>
       
@@ -118,14 +118,14 @@
 
     <header class="api-header">
       <div class="header-left">
-        <img src="logo.png" alt="Company Logo" class="logo">
+        <img src="logo-sbarter-color.svg" alt="Sbarter Logo" class="logo">
         <h1>Developer Hub</h1>
       </div>
       
       <div>
         <select id="api-selector" onchange="loadApi(this.value)">
-          <option value="openapi.yaml">VGP API Template for Sbarter</option>
-          <option value="internal-api.yaml">Sbarter API</option>
+          <option value="clienti.yaml">VGP API Template for Sbarter</option>
+          <option value="server.yaml">Sbarter API</option>
         </select>
       </div>
     </header>
@@ -148,7 +148,7 @@
         }, document.getElementById('redoc-container'));
       }
 
-      window.onload = () => loadApi('openapi.yaml');
+      window.onload = () => loadApi('client.yaml');
     </script>
   </body>
 </html>I </option>
@@ -175,7 +175,7 @@
         }, document.getElementById('redoc-container'));
       }
 
-      window.onload = () => loadApi('openapi.yaml');
+      window.onload = () => loadApi('client.yaml');
     </script>
   </body>
 </html>
