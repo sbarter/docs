@@ -1,0 +1,270 @@
+openapi: 3.0.3
+info:
+  title: Game Studio API - Sbarter Integration (Client Implementation)
+  version: 1.0.0
+  description: >
+    This OpenAPI describes the endpoints that the Game Studio must implement.
+    These endpoints are called by Sbarter (the Platform).
+
+servers:
+  - url: https://game-studio.example.com
+    description: Game Studio base URL
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: VGP - In App Confirmation
+    description: Account linking initiation via in-app confirmation (Sbarter -> Game Studio)
+  - name: Session
+    description: Session registration on Game Studio side (Sbarter -> Game Studio)
+
+paths:
+  /api/v1/sbarter/gamer/validate/in-app:
+    post:
+      tags: [VGP - In App Confirmation]
+      summary: Initiate in-app confirmation linking
+      description: >
+        Sbarter requests the Game Studio to confirm account ownership inside the game.
+        Game Studio must present an in-app prompt to the player and later call the
+        callbackUrl (Sbarter endpoint) with the final decision.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InAppConfirmationRequest'
+      responses:
+        "202":
+          description: Accepted for processing
+        "400":
+          description: Invalid request
+        "401":
+          description: Missing or invalid API key
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+
+  /v1/session:
+    post:
+      tags: [Session]
+      summary: Register a game session
+      description: >
+        Registers a new game session on the Game Studio side, linked to an internal Sbarter sessionId.
+        The provided webhookUrl MUST be used when sending results back to Sbarter.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionCreateRequest'
+      responses:
+        "201":
+          description: Session successfully registered
+        "400":
+          description: Invalid request
+        "401":
+          description: Missing or invalid API key
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Partner API key issued by the Game Studio for Sbarter to call Game Studio endpoints.
+
+  schemas:
+    InAppConfirmationRequest:
+      type: object
+      required: [requestId, sbarterId, gameId, gameUserId, expiresAt, callbackUrl]
+      properties:
+        requestId:
+          type: string
+          description: Unique linking request identifier
+          example: "a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
+        internalId:
+          type: string
+          description: "unique sbarter identification"
+          example: "someuuidorsometihingelse"
+        providerGameId:
+          type: string
+          example: "some-game-id"
+        providerUserId:
+          type: string
+          example: "user123456"
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2025-12-12T13:00:00Z"
+        callbackUrl:
+          type: string
+          format: uri
+          example: "https://api.sbarter.com/v1/game-studio/user/linking/in-app/callback"
+
+    DeepLinkConfirmationRequest:
+      type: object
+      required: [requestId, sbarterId, gameId, gameUserId, expiresAt, deepLink]
+      properties:
+        requestId:
+          type: string
+          example: "a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
+        sbarterId:
+          type: string
+          description: "unique sbarter identification"
+          example: "someuuidorsometihingelse"
+        gameId:
+          type: string
+          example: "some-game-id"
+        gameUserId:
+          type: string
+          example: "user123456"
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2025-12-12T13:00:00Z"
+        deepLink:
+          type: string
+          example: "sbarter://linking/confirm/123123123"
+
+    OtpConfirmationRequest:
+      type: object
+      required: [requestId, gameId, gameUserId, expiresAt, otpLength]
+      properties:
+        requestId:
+          type: string
+          example: "a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
+        gameId:
+          type: string
+          example: "some-game-id"
+        gameUserId:
+          type: string
+          example: "user123456"
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2025-12-12T13:00:00Z"
+        otpLength:
+          type: integer
+          minimum: 4
+          maximum: 10
+          example: 6
+
+    MatchStatus:
+      type: string
+      enum: [created, in_progress, completed, cancelled, voided]
+      description: Overall match status on the Game Studio side.
+
+    PlayerMatchEntry:
+      type: object
+      required: [gameUserId]
+      properties:
+        providerUserId:
+          type: string
+          example: "Player#1234"
+        internalId:
+          type: string
+          nullable: true
+          example: "user-12345"
+
+    SessionCreateRequest:
+      type: object
+      required: [gameId, sessionId, players, webhookUrl]
+      properties:
+        providerGameId:
+          type: string
+          example: "real boxing 3"
+        sessionId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        players:
+          type: array
+          minItems: 2
+          items:
+            $ref: '#/components/schemas/PlayerMatchEntry'
+        rules:
+          type: array
+          items:
+            type: string
+          example: ["rule12313", "someloremipsum"]
+        webhookUrl:
+          type: string
+          format: uri
+          example: "https://api.sbarter.com/v1/webhooks/game-studio/match-result"
+
+    SessionCreateResponse:
+      type: object
+      required: [gameId, sessionId, status, players, createdAt]
+      properties:
+        gameId:
+          type: string
+        sessionId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/MatchStatus'
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerMatchEntry'
+        createdAt:
+          type: string
+          format: date-time
+
+    MatchCreateRequest:
+      type: object
+      required: [gameId, sessionId, players, webhookUrl]
+      properties:
+        gameId:
+          type: string
+          example: "real boxing 3"
+        sessionId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        players:
+          type: array
+          minItems: 2
+          items:
+            $ref: '#/components/schemas/PlayerMatchEntry'
+        rules:
+          type: array
+          items:
+            type: string
+          example: ["rule12313", "someloremipsum"]
+        webhookUrl:
+          type: string
+          format: uri
+          example: "https://api.sbarter.com/v1/webhooks/match-result"
+
+    MatchCreateResponse:
+      type: object
+      required: [matchId, gameId, sessionId, status, players, createdAt]
+      properties:
+        matchId:
+          type: string
+          example: "match-abc-123"
+        gameId:
+          type: string
+        sessionId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/MatchStatus'
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerMatchEntry'
+        createdAt:
+          type: string
+          format: date-time
