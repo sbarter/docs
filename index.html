@@ -71,22 +71,47 @@
 
     <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
     
-    <script>
-      function loadApi(url) {
-        Redoc.init(url, {
-          scrollYOffset: '.api-header', 
-          hideDownloadButton: false,
-          theme: { 
-            colors: { 
-              primary: { main: '#32329f' } 
-            },
-            typography: { fontFamily: 'Roboto, sans-serif' }
-          }
-        }, document.getElementById('redoc-container'));
-      }
+<script>
+  // STEP 1: Define your brand colors here
+  const brandColor = '#32329f'; // The primary color for buttons and highlights
+  const sidebarColor = '#f9fafb'; // Light grey for a clean sidebar look
 
-      // Initial load: make sure this filename matches your primary YAML file
-      window.onload = () => loadApi('client.yaml');
-    </script>
+  function loadApi(url) {
+    Redoc.init(url, {
+      scrollYOffset: '.api-header',
+      hideDownloadButton: false,
+      theme: {
+        colors: {
+          primary: {
+            main: brandColor
+          },
+          success: {
+            main: '#10b981' // Green for "200 OK" responses
+          },
+          text: {
+            primary: '#1f2937'
+          }
+        },
+        sidebar: {
+          backgroundColor: sidebarColor,
+          width: '260px'
+        },
+        typography: {
+          fontSize: '15px',
+          fontFamily: 'Roboto, sans-serif',
+          headings: {
+            fontFamily: 'Montserrat, sans-serif',
+            fontWeight: '700'
+          }
+        },
+        rightPanel: {
+          backgroundColor: '#26292f' // Dark background for code examples
+        }
+      }
+    }, document.getElementById('redoc-container'));
+  }
+
+  window.onload = () => loadApi('server.yaml');
+</script>
   </body>
 </html>
