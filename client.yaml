@@ -20,14 +20,14 @@ tags:
     description: Session registration on Game Studio side (Sbarter -> Game Studio)
 
 paths:
-  /api/v1/sbarter/gamer/validate/in-app:
+  /v1/sbarter/gamer/validate/in-app:
     post:
       tags: [VGP - In App Confirmation]
       summary: Initiate in-app confirmation linking
       description: >
         Sbarter requests the Game Studio to confirm account ownership inside the game.
         Game Studio must present an in-app prompt to the player and later call the
-        callbackUrl (Sbarter endpoint) with the final decision.
+        webhookUrl (Sbarter endpoint) with the final decision.
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -86,12 +86,8 @@ components:
   schemas:
     InAppConfirmationRequest:
       type: object
-      required: [requestId, sbarterId, gameId, gameUserId, expiresAt, callbackUrl]
+      required: [internalId, providerGameId, providerUserId, expiresAt, webhookUrl]
       properties:
-        requestId:
-          type: string
-          description: Unique linking request identifier
-          example: "a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
         internalId:
           type: string
           description: "unique sbarter identification"
@@ -106,79 +102,26 @@ components:
           type: string
           format: date-time
           example: "2025-12-12T13:00:00Z"
-        callbackUrl:
+        webhookUrl:
           type: string
           format: uri
-          example: "https://api.sbarter.com/v1/game-studio/user/linking/in-app/callback"
-
-    DeepLinkConfirmationRequest:
-      type: object
-      required: [requestId, sbarterId, gameId, gameUserId, expiresAt, deepLink]
-      properties:
-        requestId:
-          type: string
-          example: "a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
-        sbarterId:
-          type: string
-          description: "unique sbarter identification"
-          example: "someuuidorsometihingelse"
-        gameId:
-          type: string
-          example: "some-game-id"
-        gameUserId:
-          type: string
-          example: "user123456"
-        expiresAt:
-          type: string
-          format: date-time
-          example: "2025-12-12T13:00:00Z"
-        deepLink:
-          type: string
-          example: "sbarter://linking/confirm/123123123"
-
-    OtpConfirmationRequest:
-      type: object
-      required: [requestId, gameId, gameUserId, expiresAt, otpLength]
-      properties:
-        requestId:
-          type: string
-          example: "a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
-        gameId:
-          type: string
-          example: "some-game-id"
-        gameUserId:
-          type: string
-          example: "user123456"
-        expiresAt:
-          type: string
-          format: date-time
-          example: "2025-12-12T13:00:00Z"
-        otpLength:
-          type: integer
-          minimum: 4
-          maximum: 10
-          example: 6
-
-    MatchStatus:
-      type: string
-      enum: [created, in_progress, completed, cancelled, voided]
-      description: Overall match status on the Game Studio side.
+          description: later call the webhookUrl (Sbarter endpoint) with the final decision.
+          example: "https://api.sbarter.com/v1/game-studio/user/linking/in-app/webhook"
 
     PlayerMatchEntry:
       type: object
-      required: [gameUserId]
+      required: [internalId, providerUserId]
       properties:
         providerUserId:
           type: string
           example: "Player#1234"
         internalId:
           type: string
-          nullable: true
           example: "user-12345"
 
     SessionCreateRequest:
       type: object
-      required: [gameId, sessionId, players, webhookUrl]
+      required: [providerGameId, sessionId, players, webhookUrl]
       properties:
         providerGameId:
           type: string
@@ -201,70 +144,3 @@ components:
           type: string
           format: uri
           example: "https://api.sbarter.com/v1/webhooks/game-studio/match-result"
-
-    SessionCreateResponse:
-      type: object
-      required: [gameId, sessionId, status, players, createdAt]
-      properties:
-        gameId:
-          type: string
-        sessionId:
-          type: string
-          format: uuid
-        status:
-          $ref: '#/components/schemas/MatchStatus'
-        players:
-          type: array
-          items:
-            $ref: '#/components/schemas/PlayerMatchEntry'
-        createdAt:
-          type: string
-          format: date-time
-
-    MatchCreateRequest:
-      type: object
-      required: [gameId, sessionId, players, webhookUrl]
-      properties:
-        gameId:
-          type: string
-          example: "real boxing 3"
-        sessionId:
-          type: string
-          format: uuid
-          example: "123e4567-e89b-12d3-a456-426614174000"
-        players:
-          type: array
-          minItems: 2
-          items:
-            $ref: '#/components/schemas/PlayerMatchEntry'
-        rules:
-          type: array
-          items:
-            type: string
-          example: ["rule12313", "someloremipsum"]
-        webhookUrl:
-          type: string
-          format: uri
-          example: "https://api.sbarter.com/v1/webhooks/match-result"
-
-    MatchCreateResponse:
-      type: object
-      required: [matchId, gameId, sessionId, status, players, createdAt]
-      properties:
-        matchId:
-          type: string
-          example: "match-abc-123"
-        gameId:
-          type: string
-        sessionId:
-          type: string
-          format: uuid
-        status:
-          $ref: '#/components/schemas/MatchStatus'
-        players:
-          type: array
-          items:
-            $ref: '#/components/schemas/PlayerMatchEntry'
-        createdAt:
-          type: string
-          format: date-time

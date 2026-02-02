@@ -4,19 +4,25 @@ info:
   version: 1.0.0
   description: >
     This OpenAPI describes the endpoints exposed by Sbarter that the Game Studio calls:
-    - In-app linking result callback
+    - In-app linking result webhook
     - Match result webhooks
     It also documents the OAuth2 Client Credentials token endpoint (Keycloak).
 
 servers:
-  - url: https://api.sbarter.com
+  - url: https://webhook.dev.sbarter.com
     description: Sbarter API
-  - url: https://id.sbarter.com
+  - url: https://keycloak.dev.sbarter.com
     description: Sbarter Identity Provider (Keycloak)
 
 tags:
+  - name: admin
+    description: Admin portal endpoints
+  - name: gamer
+    description: Mobile app endpoints
+  - name: web-portal
+    description: Web portal endpoints
   - name: VGP - In App Confirmation
-    description: Game Studio -> Sbarter callback for account linking result
+    description: Game Studio -> Sbarter for account linking result
   - name: VGP - DeepLink
     description: Game Studio -> Sbarter deep link generation (opens Sbarter mobile app)
   - name: Webhook
@@ -25,27 +31,39 @@ tags:
     description: Token issuance endpoint (Keycloak)
 
 paths:
-  /v1/linking/in-app/callback:
+  /v1/linking/in-app/{requestId}:
     post:
-      tags: [VGP - In App Confirmation]
-      summary: Linking result callback (accepted/rejected/expired)
+      tags:
+        - VGP - In App Confirmation
+        - web-portal
+        - admin
+      summary: Linking result (accepted/rejected/expired)
+      operationId: postInAppLinkingResult
       description: >
         Game Studio calls this endpoint after the user confirms or rejects linking inside the game.
-        This callback is the FINAL decision for the given requestId.
+        This is the FINAL decision for the given requestId.
 
         Authorization: Bearer <access_token>
       security:
         - OAuth2ClientCredentials:
-            - linking.callback.write
+            - linking.write
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          description: Linking request identifier (UUID)
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InAppLinkingResultCallback'
+              $ref: '#/components/schemas/InAppLinkingResultWebhook'
       responses:
         "202":
-          description: Callback accepted for processing
+          description: Accepted for processing
         "400":
           description: Invalid payload
         "401":
@@ -60,8 +78,12 @@ paths:
 
   /v1/linking/deeplink/generate:
     post:
-      tags: [VGP - DeepLink]
+      tags:
+        - VGP - DeepLink
+        - web-portal
+        - admin
       summary: Generate confirmation deep link
+      operationId: generateLinkingDeepLink
       description: >
         Generates a one-time confirmation deep link that opens the Sbarter mobile application.
 
@@ -107,8 +129,12 @@ paths:
 
   /v1/webhooks/game-studio/match-result:
     post:
-      tags: [Webhook]
+      tags:
+        - Webhook
+        - web-portal
+        - admin
       summary: Receive match result webhook
+      operationId: postMatchResultWebhook
       description: >
         Game Studio sends match results for a previously created match/session.
         Authorization: Bearer <access_token>
@@ -135,8 +161,16 @@ paths:
 
   /realms/studio_investor/protocol/openid-connect/token:
     post:
-      tags: [OAuth 2.0 Client Credentials]
+      servers:
+        - url: https://keycloak.dev.sbarter.com
+        - url: https://keycloak.test.sbarter.com
+        - url: https://id.sbarter.com
+      tags:
+        - OAuth 2.0 Client Credentials
+        - web-portal
+        - admin
       summary: Obtain Access Token (Client Credentials)
+      operationId: obtainClientCredentialsToken
       description: >
         Issues an access token using OAuth 2.0 Client Credentials Grant.
         The returned token_type is "Bearer".
@@ -179,23 +213,21 @@ components:
     OAuth2ClientCredentials:
       type: oauth2
       description: >
-        OAuth 2.0 Client Credentials Grant used by Game Studio when calling Sbarter callbacks/webhooks.
+        OAuth 2.0 Client Credentials Grant used by Game Studio when calling Sbarter webhooks.
         clientId/clientSecret are managed in Keycloak and bound to a specific studio/game.
       flows:
         clientCredentials:
-          tokenUrl: https://id.sbarter.com/realms/sbarter/protocol/openid-connect/token
+          tokenUrl: https://keycloak.dev.sbarter.com/realms/studio_investor/protocol/openid-connect/token
           scopes:
-            linking.callback.write: Send in-app linking result callback to Sbarter.
+            linking.write: Send in-app linking result to Sbarter.
+            linking.deeplink.write: Generate linking deep links.
             webhook.write: Send match result webhooks to Sbarter.
 
   schemas:
-    InAppLinkingResultCallback:
+    InAppLinkingResultWebhook:
       type: object
-      required: [requestId, gameId, gameUserId, status, confirmedAt]
+      required: [providerGameId, providerUserId, internalId, status, confirmedAt]
       properties:
-        requestId:
-          type: string
-          example: "a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
         providerGameId:
           type: string
           example: "some-game-id"
@@ -216,11 +248,11 @@ components:
 
     GameResultStatus:
       type: string
-      enum: [completed, pending, cancelled, unknown]
+      enum: [win, draw, failed, voided]
 
     PlayerGameResult:
       type: object
-      required: [gameUserId, outcome]
+      required: [providerUserId, internalId, outcome]
       properties:
         providerUserId:
           type: string
@@ -231,12 +263,12 @@ components:
           example: "sbarter-user-12345"
         outcome:
           type: string
-          enum: [win, loss, draw, unknown]
+          enum: [win, loss, draw]
           example: "win"
 
     GameResultWebhookPayload:
       type: object
-      required: [gameId, sessionId, matchId, status, players]
+      required: [providerGameId, sessionId, matchId, status, players]
       properties:
         providerGameId:
           type: string
@@ -247,7 +279,7 @@ components:
           example: "123e4567-e89b-12d3-a456-426614174000"
         matchId:
           type: string
-          example: "real-bxoing-match-abc-123"
+          example: "real-boxing-match-abc-123"
         status:
           $ref: '#/components/schemas/GameResultStatus'
         startedAt:
@@ -296,3 +328,47 @@ components:
           type: string
           nullable: true
           example: "webhook.write"
+    DeepLinkGenerateRequest:
+      type: object
+      required: [requestId, gameId, ruleId, gameUserId, expiresAt]
+      properties:
+        requestId:
+          type: string
+          format: uuid
+          description: Linking request identifier.
+          example: "a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
+        gameId:
+          type: string
+          description: Provider game identifier.
+          example: "some-game-id"
+        ruleId:
+          type: string
+          description: Optional rule or campaign identifier used by studio.
+          example: "rule-123"
+        gameUserId:
+          type: string
+          description: Provider user identifier.
+          example: "user123456"
+        expiresAt:
+          type: string
+          format: date-time
+          description: Expiration moment for the deep link.
+          example: "2025-12-12T13:00:00Z"
+
+    DeepLinkGenerateResponse:
+      type: object
+      required: [linkId, deepLink, expiresAt]
+      properties:
+        linkId:
+          type: string
+          description: Unique deep link identifier.
+          example: "dl_01HZZZ8YQ2K3F7Z9P8"
+        deepLink:
+          type: string
+          description: Deep link that opens Sbarter app.
+          example: "sbarter://linking/confirm/dl_01HZZZ8YQ2K3F7Z9P8"
+        expiresAt:
+          type: string
+          format: date-time
+          description: Expiration moment for the deep link.
+          example: "2025-12-12T13:00:00Z"
