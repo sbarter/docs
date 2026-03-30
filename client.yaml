@@ -2,13 +2,16 @@ openapi: 3.0.3
 info:
   title: Game Studio API - Sbarter Integration (Client Implementation)
   version: 1.0.0
-  description: >
-    This OpenAPI describes the endpoints that the Game Studio must implement.
-    These endpoints are called by Sbarter (the Platform).
-
+  description:
+      This OpenAPI specification defines the standard interface and endpoints that the Game Studio is required to implement for integration.  
+      Note: These specifications serve as a functional template and are not a live, callable API. In the production ecosystem, these endpoints 
+      are invoked by Sbarter via the Virtual Game Processor (VGP).  
+      Developers should use this document as a blueprint to build the local endpoints necessary for Sbarter to retrieve required game data. 
+      While this specification provides the baseline requirements, it should be adapted and extended to align with the specific technical 
+      architecture and capabilities of your game.
 servers:
   - url: https://game-studio.example.com
-    description: Game Studio base URL
+    description: Game Studio base URL that must be accessible to Sbarter
 
 security:
   - ApiKeyAuth: []
@@ -24,10 +27,16 @@ paths:
     post:
       tags: [VGP - In App Confirmation]
       summary: Initiate in-app confirmation linking
-      description: >
-        Sbarter requests the Game Studio to confirm account ownership inside the game.
-        Game Studio must present an in-app prompt to the player and later call the
-        webhookUrl (Sbarter endpoint) with the final decision.
+      description: |
+        Starts a high-trust verification process to link a Sbarter account with a Game Studio User ID (UID). 
+    
+        **Studio Responsibility & Workflow:**
+        1. **Authentication:** Upon receiving the `UID`, the Studio must first ensure the player is actively logged into the game or a secure Studio portal.
+        2. **User Challenge:** The Studio must present a clear, in-game alert or modal to the player. This challenge should explicitly state that a request was made via **Sbarter** at the current timestamp.
+        3. **Intent Confirmation:** The player must manually "Approve" or "Deny" that they initiated this specific request. This prevents unauthorized third-party linking.
+        4. **Callback Execution:** After the player interacts with the prompt, the Studio must asynchronously invoke the `webhookUrl` provided in the initial request to report the final `status` (e.g., `verified` or `rejected`).
+    
+        *Note: This endpoint should return an immediate `202 Accepted` to Sbarter, as the actual verification is completed asyncronously via the webhook once the player responds.*
       security:
         - ApiKeyAuth: []
       requestBody:
