@@ -2,11 +2,27 @@ openapi: 3.0.3
 info:
   title: Sbarter API - Game Studio Integration (Server Implementation)
   version: 1.0.0
-  description: >
-    This OpenAPI describes the endpoints exposed by Sbarter that the Game Studio calls:
-    - In-app linking result webhook
-    - Match result webhooks
-    It also documents the OAuth2 Client Credentials token endpoint (Keycloak).
+  description: |
+    # Sbarter Integration Services
+    This OpenAPI specification defines the secure endpoints hosted by **Sbarter** that are consumed by the **Game Studio** backend. 
+    These services facilitate the "callback" phase of the integration lifecycle, ensuring data synchronization between the game 
+    environment and the Sbarter platform.
+
+    ## Core Components
+    1. **Authentication (Keycloak):** All requests to Sbarter endpoints must be authorized via the OAuth2 Client Credentials flow. 
+    This document includes the token endpoint configuration for obtaining Bearer tokens.
+    
+    2. **Verification Webhooks:** Endpoints used by the Studio to report the outcome of in-game player actions, such as the **In-App Account Linking** result.
+    
+    3. **Match Performance Webhooks:** Endpoints used to submit game results, player statistics, and match outcomes to the Sbarter Virtual Game Processor (VGP).
+
+    ---
+    ### Integration Flow
+    For a visual overview of how these endpoints fit into the player journey, please refer to the **Account Linking Flow** diagram below:
+
+    ![Account Linking Flow](https://github.com/sbarter/docs/edit/main/Game Studio Flow.png)
+
+    *Note: Before calling these webhooks, ensure your Studio Backend has successfully exchanged its credentials for a valid JWT at the Keycloak endpoint defined in the Security section.*
 
 servers:
   - url: https://webhook.dev.sbarter.com
