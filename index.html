@@ -49,6 +49,31 @@
       }
 
       select:hover { border-color: #4f5b93; }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .flow-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 7px 12px;
+        border-radius: 999px;
+        border: 1px solid #4f5b93;
+        color: white;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 700;
+        transition: background-color 0.2s, border-color 0.2s;
+      }
+
+      .flow-link:hover {
+        background-color: #2f333a;
+        border-color: #6d79c6;
+      }
     </style>
   </head>
   <body>
@@ -59,7 +84,8 @@
         <h1>Developer Hub</h1>
       </div>
       
-      <div>
+      <div class="header-actions">
+        <a class="flow-link" href="level-3-in-app-linking-flow.html">Level 3 Flow</a>
         <select id="api-selector" onchange="loadApi(this.value)">
           <option value="server.yaml">Sbarter API</option>
           <option value="client.yaml">VGP API</option>
@@ -75,9 +101,12 @@
   // STEP 1: Define your brand colors here
   const brandColor = '#32329f'; // The primary color for buttons and highlights
   const sidebarColor = '#f9fafb'; // Light grey for a clean sidebar look
+  const docsVersion = '2026-06-30-5';
 
   function loadApi(url) {
-    Redoc.init(url, {
+    const specUrl = `${url}?v=${docsVersion}`;
+
+    Redoc.init(specUrl, {
       scrollYOffset: '.api-header',
       hideDownloadButton: false,
       theme: {
