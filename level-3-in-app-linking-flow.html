@@ -208,7 +208,7 @@
             <p><code>POST /v1/sbarter/gamer/validate/in-app</code></p>
           </div>
           <div class="meta-card">
-            <strong>Step 2: VPGS answers back</strong>
+            <strong>Step 2: VGP sends result back</strong>
             <p><code>POST /v1/linking/in-app/{requestId}</code></p>
           </div>
         </div>
@@ -225,7 +225,7 @@
 sequenceDiagram
     participant Gamer
     participant Sbarter as Sbarter Platform
-    participant Studio as Game Studio / VPGS
+    participant Studio as Game Studio / VGP
     participant IdP as Sbarter Identity Provider
 
     Sbarter->>Studio: Ask for in-game link confirmation

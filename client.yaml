@@ -64,7 +64,7 @@ paths:
         existing account link.
         Because this is a synchronous single-profile request, the response does
         not need to echo the request identifiers back.
-        The request only needs provider-side identifiers that the VPGS can
+        The request only needs provider-side identifiers that the partner can
         resolve directly.
       security:
         - ApiKeyAuth: []
@@ -164,7 +164,7 @@ components:
         webhookUrl:
           type: string
           format: uri
-          description: Sbarter callback URL that must later receive the final linking decision. The VPGS must call this exact URL as provided; it already contains the concrete requestId path value and should not be reconstructed manually.
+          description: Sbarter callback URL that must later receive the final linking decision. The partner must call this exact URL as provided; it already contains the concrete requestId path value and should not be reconstructed manually.
           example: "https://webhook.dev.sbarter.com/v1/linking/in-app/a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
 
     ProviderProfileRequest:
@@ -191,7 +191,7 @@ components:
         profileCapturedAt:
           type: string
           format: date-time
-          description: Timestamp at which the returned provider profile snapshot was captured or refreshed by the VPGS.
+          description: Timestamp at which the returned provider profile snapshot was captured or refreshed by the partner.
           example: "2025-12-12T12:44:58Z"
         profileStats:
           $ref: '#/components/schemas/ProfileStats'
