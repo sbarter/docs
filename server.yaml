@@ -15,12 +15,6 @@ servers:
     description: Sbarter Identity Provider (Keycloak)
 
 tags:
-  - name: admin
-    description: Admin portal endpoints
-  - name: gamer
-    description: Mobile app endpoints
-  - name: web-portal
-    description: Web portal endpoints
   - name: VGP - In App Confirmation
     description: Game Studio -> Sbarter for account linking result
   - name: VGP - DeepLink
@@ -35,13 +29,13 @@ paths:
     post:
       tags:
         - VGP - In App Confirmation
-        - web-portal
-        - admin
       summary: Linking result (accepted/rejected/expired)
       operationId: postInAppLinkingResult
       description: >
         Game Studio calls this endpoint after the user confirms or rejects linking inside the game.
         This is the FINAL decision for the given requestId.
+        When linking is accepted, the payload must include the verified
+        provider profile snapshot captured at link time.
 
         Authorization: Bearer <access_token>
       security:
@@ -80,8 +74,6 @@ paths:
     post:
       tags:
         - VGP - DeepLink
-        - web-portal
-        - admin
       summary: Generate confirmation deep link
       operationId: generateLinkingDeepLink
       description: >
@@ -91,6 +83,7 @@ paths:
         to the user via push notification / in-app message / email.
 
         When the user follows the deepLink, the Sbarter app opens and Sbarter finalizes the linking flow.
+        This helper flow assumes the stable provider-side account identifier is already known.
         Authorization: Bearer <access_token>
       security:
         - OAuth2ClientCredentials:
@@ -103,9 +96,9 @@ paths:
               $ref: '#/components/schemas/DeepLinkGenerateRequest'
             example:
               requestId: "a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
-              gameId: "some-game-id"
+              providerGameId: "some-game-id"
               ruleId: "rule-123"
-              gameUserId: "user123456"
+              providerUserId: "user123456"
               expiresAt: "2025-12-12T13:00:00Z"
       responses:
         "200":
@@ -131,12 +124,12 @@ paths:
     post:
       tags:
         - Webhook
-        - web-portal
-        - admin
       summary: Receive match result webhook
       operationId: postMatchResultWebhook
       description: >
-        Game Studio sends match results for a previously created match/session.
+        Game Studio sends match results for a previously created 1v1 match/session.
+        Retries are expected. Duplicate deliveries of the same logical result must be safe,
+        using `sessionId + matchId` as the idempotency key.
         Authorization: Bearer <access_token>
       security:
         - OAuth2ClientCredentials:
@@ -149,7 +142,7 @@ paths:
               $ref: '#/components/schemas/GameResultWebhookPayload'
       responses:
         "202":
-          description: Webhook accepted
+          description: Webhook accepted, including safe duplicate retries
         "400":
           description: Invalid payload
         "401":
@@ -167,8 +160,6 @@ paths:
         - url: https://id.sbarter.com
       tags:
         - OAuth 2.0 Client Credentials
-        - web-portal
-        - admin
       summary: Obtain Access Token (Client Credentials)
       operationId: obtainClientCredentialsToken
       description: >
@@ -225,26 +216,105 @@ components:
 
   schemas:
     InAppLinkingResultWebhook:
+      oneOf:
+        - $ref: '#/components/schemas/InAppLinkingResultAcceptedWebhook'
+        - $ref: '#/components/schemas/InAppLinkingResultRejectedWebhook'
+        - $ref: '#/components/schemas/InAppLinkingResultExpiredWebhook'
+      discriminator:
+        propertyName: status
+        mapping:
+          accepted: '#/components/schemas/InAppLinkingResultAcceptedWebhook'
+          rejected: '#/components/schemas/InAppLinkingResultRejectedWebhook'
+          expired: '#/components/schemas/InAppLinkingResultExpiredWebhook'
+
+    InAppLinkingResultAcceptedWebhook:
+      type: object
+      required: [providerGameId, providerUserId, internalId, status, confirmedAt, providerDisplayName, profileCapturedAt, profileStats]
+      properties:
+        providerGameId:
+          type: string
+          description: Stable provider-side game identifier.
+          example: "some-game-id"
+        providerUserId:
+          type: string
+          description: Stable provider-side account identifier that was verified during linking. This is not necessarily the player's display name.
+          example: "user123456"
+        internalId:
+          type: string
+          description: Sbarter internal player identifier used to map the verified provider-side account back to the correct Sbarter user.
+          example: "sbarter-12345-kudos"
+        providerDisplayName:
+          type: string
+          description: Verified human-readable provider display name captured at link time.
+          example: "PlayerOne"
+        status:
+          type: string
+          enum: [accepted]
+          example: "accepted"
+        confirmedAt:
+          type: string
+          format: date-time
+          description: Timestamp at which the partner reached the final linking decision.
+          example: "2025-12-12T12:45:10Z"
+        profileCapturedAt:
+          type: string
+          format: date-time
+          description: Timestamp at which the provider profile snapshot was captured.
+          example: "2025-12-12T12:44:58Z"
+        profileStats:
+          $ref: '#/components/schemas/ProfileStats'
+
+    InAppLinkingResultRejectedWebhook:
       type: object
       required: [providerGameId, providerUserId, internalId, status, confirmedAt]
       properties:
         providerGameId:
           type: string
+          description: Stable provider-side game identifier.
           example: "some-game-id"
         providerUserId:
           type: string
+          description: Stable provider-side account identifier that was targeted for verification.
           example: "user123456"
         internalId:
           type: string
+          description: Sbarter internal player identifier used to map the provider-side account back to the correct Sbarter user.
           example: "sbarter-12345-kudos"
         status:
           type: string
-          enum: [accepted, rejected, expired]
-          example: "accepted"
+          enum: [rejected]
+          example: "rejected"
         confirmedAt:
           type: string
           format: date-time
+          description: Timestamp at which the partner reached the final linking decision.
           example: "2025-12-12T12:45:10Z"
+
+    InAppLinkingResultExpiredWebhook:
+      type: object
+      required: [providerGameId, providerUserId, internalId, status, confirmedAt]
+      properties:
+        providerGameId:
+          type: string
+          description: Stable provider-side game identifier.
+          example: "some-game-id"
+        providerUserId:
+          type: string
+          description: Stable provider-side account identifier that was targeted for verification.
+          example: "user123456"
+        internalId:
+          type: string
+          description: Sbarter internal player identifier used to map the provider-side account back to the correct Sbarter user.
+          example: "sbarter-12345-kudos"
+        status:
+          type: string
+          enum: [expired]
+          example: "expired"
+        confirmedAt:
+          type: string
+          format: date-time
+          description: Timestamp at which the partner reached the final linking decision.
+          example: "2025-12-12T13:00:00Z"
 
     GameResultStatus:
       type: string
@@ -256,10 +326,12 @@ components:
       properties:
         providerUserId:
           type: string
+          description: Stable provider-side account identifier for this player. This is not necessarily the player's display name.
           example: "Player#1234"
         internalId:
           type: string
           nullable: true
+          description: Sbarter internal player identifier used to map provider-side players back to the correct Sbarter user.
           example: "sbarter-user-12345"
         outcome:
           type: string
@@ -272,13 +344,16 @@ components:
       properties:
         providerGameId:
           type: string
+          description: Stable provider-side game identifier.
           example: "real boxing 3"
         sessionId:
           type: string
           format: uuid
+          description: Canonical Sbarter session identifier. Together with `matchId`, this forms the idempotency key for retries.
           example: "123e4567-e89b-12d3-a456-426614174000"
         matchId:
           type: string
+          description: Provider-side match identifier associated with the reported result.
           example: "real-boxing-match-abc-123"
         status:
           $ref: '#/components/schemas/GameResultStatus'
@@ -286,14 +361,28 @@ components:
           type: string
           format: date-time
           nullable: true
+          description: Optional provider-side match start timestamp.
         finishedAt:
           type: string
           format: date-time
           nullable: true
+          description: Optional provider-side match completion timestamp.
         players:
           type: array
+          minItems: 2
+          maxItems: 2
+          description: Exactly two player result entries for the current Level 3 1v1 match flow.
           items:
             $ref: '#/components/schemas/PlayerGameResult'
+
+    ProfileStats:
+      type: object
+      description: Generic provider-defined profile metrics captured at link time. Keep provider-specific metrics inside this object rather than promoting them to shared top-level fields.
+      additionalProperties: {}
+      example:
+        current_trophies: 5123
+        best_trophies: 5400
+        ranked_rating: 1675
 
     ClientCredentialsTokenRequest:
       type: object
@@ -330,14 +419,14 @@ components:
           example: "webhook.write"
     DeepLinkGenerateRequest:
       type: object
-      required: [requestId, gameId, ruleId, gameUserId, expiresAt]
+      required: [requestId, providerGameId, ruleId, providerUserId, expiresAt]
       properties:
         requestId:
           type: string
           format: uuid
           description: Linking request identifier.
           example: "a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
-        gameId:
+        providerGameId:
           type: string
           description: Provider game identifier.
           example: "some-game-id"
@@ -345,9 +434,9 @@ components:
           type: string
           description: Optional rule or campaign identifier used by studio.
           example: "rule-123"
-        gameUserId:
+        providerUserId:
           type: string
-          description: Provider user identifier.
+          description: Stable provider-side account identifier.
           example: "user123456"
         expiresAt:
           type: string

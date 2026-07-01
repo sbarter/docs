@@ -16,6 +16,8 @@ security:
 tags:
   - name: VGP - In App Confirmation
     description: Account linking initiation via in-app confirmation (Sbarter -> Game Studio)
+  - name: Provider Profile
+    description: Current provider profile retrieval for already-linked accounts (Sbarter -> Game Studio)
   - name: Session
     description: Session registration on Game Studio side (Sbarter -> Game Studio)
 
@@ -26,6 +28,8 @@ paths:
       summary: Initiate in-app confirmation linking
       description: >
         Sbarter requests the Game Studio to confirm account ownership inside the game.
+        This Level 3 contract assumes Sbarter already knows the stable provider-side
+        account identifier (`providerUserId`) that must be confirmed.
         Game Studio must present an in-app prompt to the player and later call the
         webhookUrl (Sbarter endpoint) with the final decision.
       security:
@@ -48,13 +52,61 @@ paths:
         "500":
           description: Internal server error
 
+  /v1/sbarter/gamer/profile:
+    post:
+      tags: [Provider Profile]
+      summary: Fetch current provider profile snapshot
+      description: >
+        Sbarter requests the current provider profile snapshot for an already-known
+        provider-side account.
+        This endpoint is separate from linking and can be used later to refresh
+        the current provider display name and generic provider metrics for an
+        existing account link.
+        Because this is a synchronous single-profile request, the response does
+        not need to echo the request identifiers back.
+        The request only needs provider-side identifiers that the VPGS can
+        resolve directly.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderProfileRequest'
+      responses:
+        "200":
+          description: Provider profile snapshot successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderProfileResponse'
+        "400":
+          description: Invalid request
+        "401":
+          description: Missing or invalid API key
+        "404":
+          description: Provider profile not found for the supplied account
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+
   /v1/session:
     post:
       tags: [Session]
       summary: Register a game session
       description: >
-        Registers a new game session on the Game Studio side, linked to an internal Sbarter sessionId.
+        Registers a new 1v1 game session on the Game Studio side, linked to an internal
+        Sbarter sessionId.
+        This flow assumes both players have already linked and validated their
+        provider-side accounts before session registration begins.
         The provided webhookUrl MUST be used when sending results back to Sbarter.
+        `sessionId` acts as the idempotency key for repeated registration attempts.
+        Repeated calls with the same `sessionId` and the same effective payload must be
+        treated as safe retries.
+        The current Level 3 contract does not define a later Sbarter -> Game Studio
+        session-cancellation callback.
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -64,12 +116,16 @@ paths:
             schema:
               $ref: '#/components/schemas/SessionCreateRequest'
       responses:
+        "200":
+          description: Session already registered for the same sessionId (idempotent replay)
         "201":
           description: Session successfully registered
         "400":
           description: Invalid request
         "401":
           description: Missing or invalid API key
+        "409":
+          description: SessionId already exists with a conflicting payload
         "429":
           description: Too many requests
         "500":
@@ -90,23 +146,64 @@ components:
       properties:
         internalId:
           type: string
-          description: "unique sbarter identification"
+          description: Sbarter internal player identifier used to map the provider-side account back to the correct Sbarter user.
           example: "someuuidorsometihingelse"
         providerGameId:
           type: string
+          description: Stable provider-side game identifier.
           example: "some-game-id"
         providerUserId:
           type: string
+          description: Stable provider-side account identifier to be confirmed in-game. This is not necessarily the player's display name.
           example: "user123456"
         expiresAt:
           type: string
           format: date-time
+          description: Latest time at which the in-app confirmation request remains valid.
           example: "2025-12-12T13:00:00Z"
         webhookUrl:
           type: string
           format: uri
-          description: later call the webhookUrl (Sbarter endpoint) with the final decision.
-          example: "https://api.sbarter.com/v1/game-studio/user/linking/in-app/webhook"
+          description: Sbarter callback URL that must later receive the final linking decision. The VPGS must call this exact URL as provided; it already contains the concrete requestId path value and should not be reconstructed manually.
+          example: "https://webhook.dev.sbarter.com/v1/linking/in-app/a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
+
+    ProviderProfileRequest:
+      type: object
+      required: [providerGameId, providerUserId]
+      properties:
+        providerGameId:
+          type: string
+          description: Stable provider-side game identifier.
+          example: "some-game-id"
+        providerUserId:
+          type: string
+          description: Stable provider-side account identifier whose latest provider profile snapshot Sbarter wants to fetch.
+          example: "user123456"
+
+    ProviderProfileResponse:
+      type: object
+      required: [providerDisplayName, profileCapturedAt]
+      properties:
+        providerDisplayName:
+          type: string
+          description: Current human-readable provider display name for this account. If the provider does not distinguish between account ID and display name, return the best user-facing name available.
+          example: "PlayerOne"
+        profileCapturedAt:
+          type: string
+          format: date-time
+          description: Timestamp at which the returned provider profile snapshot was captured or refreshed by the VPGS.
+          example: "2025-12-12T12:44:58Z"
+        profileStats:
+          $ref: '#/components/schemas/ProfileStats'
+
+    ProfileStats:
+      type: object
+      description: Optional generic provider-defined profile metrics. Keep provider-specific metrics inside this object rather than promoting them to shared top-level fields. This object may be empty if the provider exposes no extra profile metrics.
+      additionalProperties: {}
+      example:
+        current_trophies: 5123
+        best_trophies: 5400
+        ranked_rating: 1675
 
     PlayerMatchEntry:
       type: object
@@ -114,33 +211,46 @@ components:
       properties:
         providerUserId:
           type: string
+          description: Stable provider-side account identifier for this player. This is not necessarily the player's display name.
           example: "Player#1234"
         internalId:
           type: string
+          description: Sbarter internal player identifier used to map provider-side players back to the correct Sbarter user.
           example: "user-12345"
 
     SessionCreateRequest:
       type: object
-      required: [providerGameId, sessionId, players, webhookUrl]
+      required: [providerGameId, sessionId, players, expiresAt, webhookUrl]
       properties:
         providerGameId:
           type: string
+          description: Stable provider-side game identifier for the session being created.
           example: "real boxing 3"
         sessionId:
           type: string
           format: uuid
+          description: Canonical Sbarter session identifier. This value acts as the idempotency key for repeated session registration attempts.
           example: "123e4567-e89b-12d3-a456-426614174000"
         players:
           type: array
           minItems: 2
+          maxItems: 2
+          description: Exactly two players participating in the current Level 3 1v1 session.
           items:
             $ref: '#/components/schemas/PlayerMatchEntry'
         rules:
           type: array
+          description: Optional provider-defined rules, modifiers, or campaign identifiers for this session.
           items:
             type: string
           example: ["rule12313", "someloremipsum"]
+        expiresAt:
+          type: string
+          format: date-time
+          description: Latest time at which the registered provider-side session is considered valid.
+          example: "2025-12-12T13:00:00Z"
         webhookUrl:
           type: string
           format: uri
+          description: Sbarter callback URL that must receive the final result for this session.
           example: "https://api.sbarter.com/v1/webhooks/game-studio/match-result"
