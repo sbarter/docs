@@ -113,6 +113,11 @@ paths:
         rather than assuming the requested value was kept.
 
 
+        An optional destination can send the player to a Sbarter tournament or challenge after
+        they confirm the link. Sbarter checks that the target exists, belongs to the resolved
+        game, and is open for participation. Without it, the normal post-linking journey applies.
+
+
         Authorization: Bearer <access_token>
       security:
         - OAuth2ClientCredentials:
@@ -127,7 +132,9 @@ paths:
               providerGameId: "some-game-id"
               providerUserId: "user123456"
               providerDisplayName: "DragonSlayer42"
-              expiresAt: "2025-12-12T13:00:00Z"
+              destination:
+                type: tournament
+                resourceId: "00000000-0000-0000-0000-000000000101"
       responses:
         "201":
           description: Link minted
@@ -141,14 +148,17 @@ paths:
                 expiresAt: "2025-12-12T13:00:00Z"
         "400":
           description: >-
-            Invalid payload, an expiresAt already in the past, or a providerGameId that resolves
-            only to the studio's default partner row and so does not identify one game
+            Invalid payload (including an unsupported destination type or invalid resourceId),
+            an expiresAt already in the past, or a providerGameId that resolves only to the
+            studio's default partner row and so does not identify one game
         "401":
           description: Missing or invalid OAuth2 token
         "403":
           description: Token is missing the linking.deeplink.write scope
         "404":
-          description: No game of this studio matches the supplied providerGameId
+          description: >-
+            No game of this studio matches providerGameId, or the optional destination is missing,
+            belongs to another game, has expired, or is not open for participation
         "500":
           description: Internal server error
 
@@ -551,6 +561,23 @@ components:
             absent; a value already in the past is refused with 400. Read expiresAt in the
             response to see what was actually stored.
           example: "2025-12-12T13:00:00Z"
+        destination:
+          $ref: '#/components/schemas/DeepLinkDestination'
+
+    DeepLinkDestination:
+      type: object
+      description: >-
+        Optional Sbarter navigation target after the player confirms the link. Sbarter checks
+        that the target exists, belongs to the resolved game, and is open for participation.
+      required: [type, resourceId]
+      properties:
+        type:
+          type: string
+          enum: [tournament, challenge]
+        resourceId:
+          type: string
+          format: uuid
+          description: Sbarter tournament or challenge UUID, matching type; not a provider-side ID.
 
     DeepLinkGenerateResponse:
       type: object
