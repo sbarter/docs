@@ -101,7 +101,7 @@ paths:
         tapping the link and authenticating with Sbarter, after which the game is added to their
         library. **There is no callback to the studio** - this flow does not use the in-app
         linking webhook, and nothing is sent back when the link is redeemed. To find out whether
-        it worked, call `POST /v1/linking/status`.
+        it worked, call [`POST /v1/linking/status`](/server/vgp-link-status).
 
 
         The studio is taken from the access token, never from the payload. There is no way to mint

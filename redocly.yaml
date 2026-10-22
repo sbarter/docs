@@ -9,7 +9,7 @@ apis:
     root: ./client.yaml
 
 logo:
-  image: ./logo-sbarter-color.svg
+  image: ./sbarter-logo.png
   altText: Sbarter
   link: /
 

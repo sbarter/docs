@@ -18,6 +18,8 @@
   items:
     - page: guides/index.md
       label: Integration Overview
+    - page: guides/account-linking.md
+      label: Account Linking
 
 
 - group: API Reference
