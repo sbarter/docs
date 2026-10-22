@@ -55,6 +55,6 @@ See **API Reference → Sbarter API** and **API Reference → Game Studio API** 
 | Player presence or login-window evidence for missing results | **Under Development**. Requires publisher confirmation and an agreed interface. |
 | Reconciliation lookup if a result callback never arrives | **Under Development**. Requires a published recovery interface. |
 
-> **Source and scope:** These guides map the the account-onboarding and competition journey designs design flows to the currently published API contracts. The flows contain agreed product intentions, assumptions and items awaiting Video Game Studio confirmation. An item appearing in a flow does not imply that its API has already been implemented.
+> **Source and scope:** These guides map the account-onboarding and competition journey design flows to the currently published API contracts. The flows contain agreed product intentions, assumptions and items awaiting Video Game Studio confirmation. An item appearing in a flow does not imply that its API has already been implemented.
 
 **Next:** [Account Linking](./account-linking/).

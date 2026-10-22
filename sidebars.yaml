@@ -20,6 +20,10 @@
       label: Integration Overview
     - page: guides/account-linking.md
       label: Account Linking
+    - page: guides/one-v-one.md
+      label: 1v1 Challenge Integration
+    - page: guides/tournaments.md
+      label: Tournament Integration
 
 
 - group: API Reference
