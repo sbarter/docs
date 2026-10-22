@@ -3,9 +3,16 @@
   label: Overview
 
 - group: Getting Started
+  expanded: true
   items:
-    - page: getting-started/index.md
+    - page: getting-started/introduction.md
       label: Introduction
+    - page: getting-started/architecture.md
+      label: Integration Architecture
+    - page: getting-started/quickstart.md
+      label: Quick Start
+    - page: getting-started/authentication.md
+      label: Authentication & Credentials
 
 - group: Integration Guides
   items:
