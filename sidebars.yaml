@@ -1,0 +1,30 @@
+
+- page: index.md
+  label: Overview
+
+- group: Getting Started
+  items:
+    - page: getting-started/index.md
+      label: Introduction
+
+- group: Integration Guides
+  items:
+    - page: guides/index.md
+      label: Integration Overview
+
+- group: API Reference
+  items:
+    - page: server.yaml
+      label: Sbarter API
+    - page: client.yaml
+      label: Game Studio API
+
+- group: Security & Operations
+  items:
+    - page: operations/index.md
+      label: Security and Operations
+
+- group: Testing & Releases
+  items:
+    - page: testing/index.md
+      label: Testing and Releases
