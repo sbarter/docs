@@ -24,6 +24,10 @@
       label: 1v1 Challenge Integration
     - page: guides/tournaments.md
       label: Tournament Integration
+    - page: guides/game-results.md
+      label: Game Results & Reconciliation
+    - page: guides/notifications.md
+      label: Notifications & Deep Linking
 
 
 - group: API Reference
