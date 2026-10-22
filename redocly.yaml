@@ -1,0 +1,20 @@
+
+extends:
+  - recommended
+
+apis:
+  sbarter@v1:
+    root: ./server.yaml
+  game-studio@v1:
+    root: ./client.yaml
+
+logo:
+  image: ./logo-sbarter-color.svg
+  altText: Sbarter
+  link: /
+
+colorMode:
+  ignoreDetection: true
+  modes:
+    - dark
+    - light

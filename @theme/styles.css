@@ -1,0 +1,61 @@
+
+/*
+ * Sbarter Developer Hub
+ * Dark-first branding
+ *
+ * Provisional violet accent:
+ * replace with official Sbarter HEX colours.
+ */
+
+:root {
+  --color-primary: #7356d8;
+  --color-primary-hover: #6044c3;
+  --link-text-color: #684bc8;
+}
+
+/* Dark mode */
+
+:root.dark {
+  --color-primary: #b8a1ff;
+  --color-primary-hover: #d0c0ff;
+
+  --link-text-color: #baa6ff;
+
+  --navbar-bg-color: #11131c;
+  --navbar-background-color: #11131c;
+
+  --sidebar-background-color: #151823;
+  --sidebar-active-background-color: #29263e;
+
+  --content-background-color: #11131c;
+
+  --heading-text-color: #ffffff;
+  --h1-text-color: #ffffff;
+  --text-color: #e0e1eb;
+
+  --border-color: #343445;
+  --bg-overlay: #1b1e2b;
+}
+
+/* Light mode */
+
+:root.light {
+  --color-primary: #684bc8;
+  --color-primary-hover: #5138a9;
+
+  --link-text-color: #684bc8;
+
+  --navbar-bg-color: #ffffff;
+  --navbar-background-color: #ffffff;
+
+  --sidebar-background-color: #f7f7fb;
+  --sidebar-active-background-color: #eee8ff;
+
+  --content-background-color: #ffffff;
+
+  --heading-text-color: #171723;
+  --h1-text-color: #171723;
+  --text-color: #303344;
+
+  --border-color: #e4e4ec;
+}
