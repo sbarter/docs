@@ -10,11 +10,16 @@ Learn the integration model, required credentials and the minimum steps for your
 ### [Integration Guides](./guides/index.md)
 Follow end-to-end player journeys, including account linking, 1v1 challenges, tournaments and result handling. Availability of individual capabilities is identified in each guide.
 
-### API Reference
-Use the **API Reference** section in the navigation for the authoritative request and response schemas:
 
-- **Sbarter API:** endpoints hosted by Sbarter and called by the game studio, including linking, linking status and match-result submission (`server.yaml`).
-- **Game Studio API:** endpoints the game studio implements and Sbarter calls, including in-app linking confirmation, profile retrieval and session registration (`client.yaml`).
+## [API Reference](/api/)
+
+Explore the authoritative OpenAPI specifications
+for both integration interfaces:
+
+- **Sbarter API:** Endpoints hosted by Sbarter
+  and called by game studios.
+- **Game Studio API:** Endpoints implemented by
+  game studios and called by Sbarter.
 
 ### [Security & Operations](./operations/index.md)
 Understand authentication, permissions, error handling, retries and idempotency.

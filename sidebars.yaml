@@ -19,8 +19,11 @@
     - page: guides/index.md
       label: Integration Overview
 
+
 - group: API Reference
   items:
+    - page: api/index.md
+      label: API Overview
     - page: server.yaml
       label: Sbarter API
     - page: client.yaml
