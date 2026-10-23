@@ -1,4 +1,53 @@
-# Build skill-based competition into your game
+---
+markdown:
+  toc:
+    hide: true
+  lastUpdatedBlock:
+    hide: true
+---
+<div class="sbarter-hero">
+
+  <div class="sbarter-hero__inner">
+
+    <div class="sbarter-hero__media">
+      <img
+        src="./images/Phone-new.png"
+        alt="Sbarter mobile application"
+      />
+    </div>
+
+    <div class="sbarter-hero__content">
+      <div class="sbarter-hero__eyebrow">
+        Sbarter for Developers
+      </div>
+
+      <h1>
+        Build skill-based competition into your game
+      </h1>
+
+      <p class="sbarter-hero__lead">
+        Integrate your video game with Sbarter's
+        skill-based competition platform.
+        Link player accounts, register game sessions
+        and submit authoritative match results,
+        while Sbarter manages the competition experience.
+      </p>
+
+      <div class="sbarter-hero__actions">
+        <a class="sbarter-btn sbarter-btn--primary"
+           href="/getting-started/introduction/">
+          Get Started
+        </a>
+
+        <a class="sbarter-btn sbarter-btn--secondary"
+           href="/guides/">
+          Integration Guides
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 Connect your video game to Sbarter so players can link their game accounts, enter skill-based challenges and tournaments, play in your game, and receive competition results and payouts through Sbarter.
 
