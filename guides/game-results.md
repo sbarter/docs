@@ -12,30 +12,7 @@ This guide explains how a **Video Game Studio** reports authoritative match resu
 
 ## Result lifecycle
 
-```mermaid
-flowchart TD
-    A[Sbarter registers two-player session with Studio] --> B[Studio hosts match]
-    B --> C{Authoritative result received and validated?}
-    C -->|Yes| D[Sbarter resolves 1v1 or tournament match]
-    C -->|No, completion window ends| E{Trusted login-window evidence available?}
-    E -->|One player present| F[Proposed: absent player forfeits]
-    E -->|Neither player present| G[Proposed: void]
-    E -->|Both players present| H{Competition type?}
-    H -->|1v1| I[Proposed: void and refund]
-    H -->|Tournament| J[Request manual results in Sbarter app]
-    J --> K{Reports determine winner?}
-    K -->|Yes| L[Advance winner]
-    K -->|No| M[Void tournament match]
-    E -->|Evidence unavailable| N[Recovery policy must be agreed; do not infer a winner]
-    D --> O[Settle or advance under contest rules]
-    F --> O
-    G --> O
-    I --> O
-    L --> O
-    M --> O
-```
-
-*Generic adaptation of the missing-result rules in player journey v8, page 3. This is the **proposed business flow**, not a claim that all depicted integrations are already implemented.*
+![Account linking, Video Game-first journey](./images/missing-results-rules.png)
 
 ## Published API operations
 

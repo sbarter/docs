@@ -10,26 +10,7 @@ Sbarter manages tournament discovery, registration, eligibility, the prize pool,
 
 ## End-to-end tournament journey
 
-```mermaid
-flowchart TD
-    A[Sbarter tournament is configured and published] --> B[Players register and fund entries in Sbarter]
-    B --> C{Minimum field / start criteria met?}
-    C -->|No| D[Cancel and refund under tournament rules]
-    C -->|Yes| E[Sbarter generates bracket]
-    E --> F[Sbarter registers each two-player round match with Studio]
-    F --> G[Round-ready notice; player launches Video Game match]
-    G --> H[Studio hosts match and reports server result]
-    H --> I{Valid result available?}
-    I -->|Yes| J[Sbarter determines advancing player]
-    I -->|No| K[Missing-result adjudication rules]
-    K --> J
-    J --> L{Final decided?}
-    L -->|No| M[Advance bracket or award bye under tournament rules]
-    M --> F
-    L -->|Yes| N[Sbarter distributes prizes and updates player wallets]
-```
-
-*Generic adaptation of the tournament journey v8, page 2. Bracket policy, financial amounts and player-resolution rules may differ between tournament formats.*
+![Account linking, Video Game-first journey](./images/tournament-journey.png)
 
 ## Tournament setup and registration
 

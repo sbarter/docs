@@ -264,6 +264,7 @@ paths:
 
   /realms/studio_investor/protocol/openid-connect/token:
     post:
+      security: []
       servers:
         - url: https://keycloak.dev.sbarter.com
         - url: https://keycloak.test.sbarter.com

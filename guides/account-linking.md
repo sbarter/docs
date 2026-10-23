@@ -6,25 +6,9 @@ Two entry points are described: a player may arrive from **a Video Game (Journey
 
 
 ## Journey A: Start in the publisher's game
+![Account linking, Video Game-first journey](./images/account-linking-game-first.png)
 
-```mermaid
-flowchart TD
-    A[Player taps Sbarter link in Video Game] --> B{Sbarter installed?}
-    B -->|No| C[Studio welcome page and app install]
-    C --> D[Open Sbarter with game-account context]
-    B -->|Yes| D
-    D --> E[Register or sign in Sbarter]
-    E --> F{Existing binding conflict in Sbarter?}
-    F -->|Yes| G[Block binding]
-    F -->|No| H[Create or reuse binding in Sbarter]
-    H --> I[Open linked contest or filtered browse in Sbarter]
-    I --> J{Eligibility and funds sufficient check in Sbarter?}
-    J -->|No| K[Show eligibility or funding action]
-    J -->|Yes| L[Continue to competition]
-```
-
-*Generic overview of the proposed Video Game-first journey. The implementation steps and API contracts below are authoritative for technical integration; this flow is illustrative.*
-
+[View original PDF](./pdf/Game%20x%20Sbarter%20account%20binding.pdf)
 ### Player and platform sequence
 
 1. The authenticated player in the Video Game selects a Sbarter link from the game's menu, banner, post-match screen or another supported entry point. The link carries the Video Game account identifier.
@@ -48,21 +32,9 @@ flowchart TD
 
 ## Journey B: Start in the Sbarter app
 
-```mermaid
-flowchart TD
-    A[Player selects Video Game contest in Sbarter] --> B{Already linked?}
-    B -->|Yes| H[Return to contest]
-    B -->|No| C[Open Video Game with one-time link code]
-    C --> D[Player authenticates in Video Game]
-    D --> E[Video Game Studio associates account with code]
-    E --> F{Binding conflict?}
-    F -->|Yes| G[Block binding]
-    F -->|No| H
-    H --> I[Check skill eligibility and funds]
-    I --> J[Continue to competition]
-```
+![Account linking, Video Game-first journey](./images/account-linking-sbarter-first.png)
 
-*Generic overview of the proposed Sbarter-first journey. A link-code discovery contract remains under development.*
+[View original PDF](./pdf/Game%201v1%20&%20tournament%20player%20journey.pdf)
 
 ### Player and platform sequence
 

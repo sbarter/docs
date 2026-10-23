@@ -12,30 +12,8 @@ This guide describes the player and system journey for a **1v1 skill-based chall
 
 ## End-to-end journey
 
-```mermaid
-flowchart TD
-    A[Player A creates open or private 1v1 in Sbarter] --> B[Sbarter checks eligibility and escrows A stake]
-    B --> C{Open or private?}
-    C -->|Open| D[Available to eligible players in Sbarter browse]
-    C -->|Private| E[Invite selected player; optional in-game notice]
-    D --> F[Player B accepts in Sbarter; B stake held]
-    E --> F
-    F --> G{Open challenge?}
-    G -->|Yes| H{Player A confirms B?}
-    H -->|No| I[Refund B; challenge may be relisted]
-    H -->|Yes| J[Sbarter locks challenge]
-    G -->|No| J
-    J --> K[Sbarter registers two-player session with Studio]
-    K --> L[Players receive match-ready action]
-    L --> M[Both enter same Video Game match]
-    M --> N[Studio reports game-server result]
-    N --> O{Valid authoritative result received?}
-    O -->|Yes| P[Sbarter validates and settles]
-    O -->|No| Q[Missing-result policy / recovery, subject to agreement]
-    P --> R[Players see result and payout]
-```
+![Account linking, Video Game-first journey](./images/one-v-one-journey.png)
 
-*Generic adaptation of the 1v1 journey v8, page 1. It intentionally removes the original partner names and does not imply all proposed integration actions have published APIs.*
 
 ## Player journey and API mapping
 
