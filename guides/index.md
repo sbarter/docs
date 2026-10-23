@@ -4,6 +4,19 @@ This section explains how a video game publisher connects its game services to S
 
 The **Sbarter platform own the experience for wager based competition**. The **publisher owns the game, game accounts, non-wager based competition and authoritative game-server data**. Players who wager on their skills, find, create, accept and join challenges or tournaments in Sbarter, including when they arrive through a link displayed inside the game.
 
+## Integration Architecture
+
+Sbarter provides the competition infrastructure while the Video Game Studio remains responsible for gameplay and authoritative game results.
+
+The integration supports account linking initiated from either the Video Game or the Sbarter app.
+
+![Sbarter Integration Architecture](./images/Sbarter_Integration_Architecture.png)
+
+The diagram illustrates the main interactions between players, Sbarter and the Video Game Studio, from account linking through match settlement.
+
+For more technical details, see the
+[Integration Architecture](/getting-started/architecture/).
+
 ## Integration lifecycle
 
 | Stage | Player-facing experience | Sbarter responsibility | Publisher responsibility |

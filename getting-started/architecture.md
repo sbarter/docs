@@ -2,6 +2,8 @@
 
 Sbarter orchestrates the competition while the game studio operates the game and supplies its authoritative results. The published integration is built around HTTPS APIs and a Sbarter-hosted result callback.
 
+![Sbarter Integration Architecture](../guides/images/Sbarter_Integration_Architecture.png)
+
 ## Interaction directions
 
 | Interaction | Caller → receiver | Published operation |

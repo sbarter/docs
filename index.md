@@ -1,4 +1,8 @@
 ---
+navigation:
+  actions:
+    hide: true
+
 markdown:
   toc:
     hide: true
@@ -45,10 +49,8 @@ markdown:
         </a>
       </div>
     </div>
-
   </div>
 </div>
-
 Connect your video game to Sbarter so players can link their game accounts, enter skill-based challenges and tournaments, play in your game, and receive competition results and payouts through Sbarter.
 
 **Your studio runs the game. Sbarter manages the competition experience.**
