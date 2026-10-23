@@ -53,6 +53,7 @@ markdown:
 </div>
 Connect your video game to Sbarter so players can link their game accounts, enter skill-based challenges and tournaments, play in your game, and receive competition results and payouts through Sbarter.
 
+
 **Your studio runs the game. Sbarter manages the competition experience.**
 
 {% cards %}
@@ -134,7 +135,6 @@ The technical contracts fit into an end-to-end experience. Use the guides to und
   {% /card %}
 {% /cards %}
 
-> **Integration maturity:** The API Reference documents published contracts. Some functions shown in player journeys, such as direct match launch, in-game notifications and missing-result recovery, require additional integration work or agreement with the Video Game Studio. Each guide identifies these separately. A diagram does not by itself guarantee an endpoint is available.
 
 ## Build and operate reliably
 
