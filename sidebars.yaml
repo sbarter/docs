@@ -1,0 +1,50 @@
+
+- page: index.md
+  label: Overview
+
+- group: Getting Started
+  expanded: true
+  items:
+    - page: getting-started/introduction.md
+      label: Introduction
+    - page: getting-started/architecture.md
+      label: Integration Architecture
+    - page: getting-started/quickstart.md
+      label: Quick Start
+    - page: getting-started/authentication.md
+      label: Authentication & Credentials
+
+- group: Integration Guides
+  items:
+    - page: guides/index.md
+      label: Integration Overview
+    - page: guides/account-linking.md
+      label: Account Linking
+    - page: guides/one-v-one.md
+      label: 1v1 Challenge Integration
+    - page: guides/tournaments.md
+      label: Tournament Integration
+    - page: guides/game-results.md
+      label: Game Results & Reconciliation
+    - page: guides/notifications.md
+      label: Notifications & Deep Linking
+
+
+- group: API Reference
+  items:
+    - page: api/index.md
+      label: API Overview
+    - page: server.yaml
+      label: Sbarter API
+    - page: client.yaml
+      label: Game Studio API
+
+- group: Security & Operations
+  items:
+    - page: operations/index.md
+      label: Security and Operations
+
+- group: Testing & Releases
+  items:
+    - page: testing/index.md
+      label: Testing and Releases
