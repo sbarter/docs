@@ -264,6 +264,8 @@ paths:
 
   /realms/studio_investor/protocol/openid-connect/token:
     post:
+      # Token issuance itself: the client authenticates with client_id/client_secret in the body,
+      # so no bearer token is required here.
       security: []
       servers:
         - url: https://keycloak.dev.sbarter.com
