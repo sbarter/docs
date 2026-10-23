@@ -1,38 +1,90 @@
-# Sbarter Developer Hub
+# Build skill-based competition into your game
 
-Integrate your video game with Sbarter's skill-based competition platform. This hub explains how a game studio links player accounts, registers game sessions and supplies authoritative match results while Sbarter manages the competition experience.
+Connect your video game to Sbarter so players can link their game accounts, enter skill-based challenges and tournaments, play in your game, and receive competition results and payouts through Sbarter.
 
-## Choose where to start
+**Your studio runs the game. Sbarter manages the competition experience.**
 
-### [Getting Started](./getting-started/introduction.md)
-Learn the integration model, required credentials and the minimum steps for your first connection.
+{% cards %}
+  {% card title="Start integrating" to="./getting-started/introduction.md" %}
+    Understand the integration model, prerequisites and the steps to establish your first connection.
 
-### [Integration Guides](./guides/index.md)
-Follow end-to-end player journeys, including account linking, 1v1 challenges, tournaments and result handling. Availability of individual capabilities is identified in each guide.
+    **Read Getting Started →**
+  {% /card %}
+  {% card title="Explore integration journeys" to="./guides/index.md" %}
+    Follow player account linking, 1v1 challenges, tournaments, match results, notifications and deep links.
 
+    **Browse integration guides →**
+  {% /card %}
+  {% card title="Explore the API reference" to="./api/index.md" %}
+    Find the request and response contracts for both Sbarter-hosted and studio-hosted interfaces.
 
-## [API Reference](/api/)
+    **Open API Reference →**
+  {% /card %}
+{% /cards %}
 
-Explore the authoritative OpenAPI specifications
-for both integration interfaces:
+## How the integration works
 
-- **Sbarter API:** Endpoints hosted by Sbarter
-  and called by game studios.
-- **Game Studio API:** Endpoints implemented by
-  game studios and called by Sbarter.
+Sbarter handles the competition lifecycle while your game remains the authoritative source for gameplay and game-server match results.
 
-### [Security & Operations](./operations/index.md)
-Understand authentication, permissions, error handling, retries and idempotency.
+| Stage | Sbarter | Video Game Studio |
+| --- | --- | --- |
+| **1. Link accounts** | Connects a Sbarter player to a game account | Identifies and validates the game account |
+| **2. Enter competitions** | Manages eligibility, challenges, tournaments and wager or entry-fee handling | Supplies relevant player and game information |
+| **3. Prepare matches** | Determines the opponents and requests a session | Registers or provisions the game session |
+| **4. Play and report** | Coordinates competition status and evaluates outcomes | Runs gameplay and supplies authoritative results |
+| **5. Complete the contest** | Applies competition rules and settles outcomes | Supports agreed exception-handling and reconciliation mechanisms |
 
-### [Testing & Releases](./testing/index.md)
-Find integration testing guidance, versioning information and the development roadmap.
+[See the integration architecture →](./getting-started/architecture.md)
 
-## Integration at a glance
+## Your first integration
 
-1. **Connect accounts.** Associate a Sbarter player with a stable game-studio player identifier using one of the supported linking flows.
-2. **Create game sessions.** Once two eligible, linked players have been matched by Sbarter, Sbarter registers the session with the game studio.
-3. **Report results.** The game studio posts the match outcome to the callback supplied by Sbarter when the session was registered.
+Follow this sequence to get from technical onboarding to a first end-to-end test.
 
-Sbarter handles challenge and tournament participation, competition rules and financial settlement. The game studio remains responsible for its game accounts, gameplay and game-server results.
+1. **Understand the integration model.** Review system responsibilities and the communication direction of each API. [Integration Architecture →](./getting-started/architecture.md)
+2. **Set up authentication.** Obtain the relevant credentials and understand how requests are authenticated. [Authentication & Credentials →](./getting-started/authentication.md)
+3. **Implement account linking.** Associate the player's Sbarter identity with the correct Video Game account. [Account Linking →](./guides/account-linking.md)
+4. **Register and complete a game session.** Use the published session and result contracts as the technical reference. [Quick Start →](./getting-started/quickstart.md)
 
-> **API availability:** The published OpenAPI specifications are the source of truth for released HTTP operations. Features described in journey diagrams but not included in the published specification must be explicitly marked as **Under Development** until verified and released.
+## Two APIs, two responsibilities
+
+{% cards %}
+  {% card title="Sbarter API" to="./server.yaml" %}
+    **Hosted by Sbarter · Called by the Video Game Studio**
+
+    Includes account-linking operations and match-result submission. View the published endpoint definitions, authentication and payload schemas.
+
+    **View Sbarter API →**
+  {% /card %}
+  {% card title="Game Studio API" to="./client.yaml" %}
+    **Hosted by the Video Game Studio · Called by Sbarter**
+
+    Includes in-game linking validation, player profile retrieval and session registration. These are the endpoints your studio implements.
+
+    **View Game Studio API →**
+  {% /card %}
+{% /cards %}
+
+## Design for real player journeys
+
+The technical contracts fit into an end-to-end experience. Use the guides to understand what happens before, during and after a match, including cases where a result is missing or a player does not participate.
+
+{% cards %}
+  {% card title="Account linking" to="./guides/account-linking.md" %}
+    See both the game-first and Sbarter-first account-binding journeys.
+  {% /card %}
+  {% card title="1v1 challenges" to="./guides/one-v-one.md" %}
+    Understand acceptance, match preparation, game launch and settlement.
+  {% /card %}
+  {% card title="Tournaments" to="./guides/tournaments.md" %}
+    Follow registration, brackets, individual rounds and prize distribution.
+  {% /card %}
+  {% card title="Results and recovery" to="./guides/game-results.md" %}
+    Learn about authoritative results, incomplete sessions and exceptional outcomes.
+  {% /card %}
+{% /cards %}
+
+> **Integration maturity:** The API Reference documents published contracts. Some functions shown in player journeys, such as direct match launch, in-game notifications and missing-result recovery, require additional integration work or agreement with the Video Game Studio. Each guide identifies these separately. A diagram does not by itself guarantee an endpoint is available.
+
+## Build and operate reliably
+
+Review [Security & Operations](./operations/index.md) for authentication, request handling and operational considerations. Before release, use [Testing & Releases](./testing/index.md) to plan integration validation and rollout.
