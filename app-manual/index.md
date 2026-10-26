@@ -5,7 +5,8 @@ description: "The Sbarter App – User Manual for Video Game Providers, Draft v0
 
 # The Sbarter App – User Manual
 
-**Draft v0.2 · 26 October 2026 · Confidential – for VGP partners.** Based on Sbarter app version 1.0.403 (iOS) and on the developer portal as published in October 2026.
+**Draft v0.2 · 26 October 2026 · Confidential – for VGP partners.** 
+Based on Sbarter app version 1.0.403 (iOS) and on the developer portal as published in October 2026.
 
 This manual describes the Sbarter app as a player experiences it, screen by screen, and shows how the app and an integrated game work together across the life of a contest. It is written for Video Game Providers – management, product, marketing, support and engineering teams – who need to understand what their players will see and do once their title is live on Sbarter.
 
