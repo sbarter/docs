@@ -21,6 +21,12 @@ info:
     without the others, so check the `scope` claim of the token you were issued rather than
     assuming the full set.
 
+
+    Errors. Besides the statuses listed per endpoint, a request that breaks a business rule is
+    answered `467` with a body of `{"error": "...", "errorCode": "GI00xx", "additionalData": {...}}`;
+    branch on `errorCode`, not on the message. GI0021 (deeplink already used) and GI0022 (deeplink
+    expired or unknown) are returned to the player who taps a link, never to the Game Studio.
+
 servers:
   - url: https://partners.{environment}sbarter.com/{studio}
     description: >-
