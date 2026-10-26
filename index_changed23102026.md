@@ -1,6 +1,6 @@
 # Sbarter Developer Hub
 
-Integrate your video game with Sbarter's skill-based competition platform. This hub explains how a game studio links player accounts, registers game sessions and supplies authoritative match results while Sbarter manages the competition experience.
+Integrate your video game with Sbarter's skill-based competition platform. This hub explains how a game studio links player accounts, registers game sessions and supplies authoritative contest results while Sbarter manages the competition experience.
 
 ## Choose where to start
 
@@ -31,7 +31,7 @@ Find integration testing guidance, versioning information and the development ro
 
 1. **Connect accounts.** Associate a Sbarter player with a stable game-studio player identifier using one of the supported linking flows.
 2. **Create game sessions.** Once two eligible, linked players have been matched by Sbarter, Sbarter registers the session with the game studio.
-3. **Report results.** The game studio posts the match outcome to the callback supplied by Sbarter when the session was registered.
+3. **Report results.** The game studio posts the contest outcome to the callback supplied by Sbarter when the session was registered.
 
 Sbarter handles challenge and tournament participation, competition rules and financial settlement. The game studio remains responsible for its game accounts, gameplay and game-server results.
 

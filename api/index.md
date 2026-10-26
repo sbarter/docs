@@ -9,7 +9,7 @@ interfaces, each with a different implementation responsibility.
 Endpoints hosted by Sbarter and called by game studios.
 
 These include player account linking, linking status,
-and game match result submissions.
+and contest result submissions.
 
 [View Sbarter API](/server)
 

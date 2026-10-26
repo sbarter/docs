@@ -114,7 +114,7 @@ Use the correct Keycloak host for the selected environment, as specified in the 
 | `linking.deeplink.write` | Generate linking deep links |
 | `linking.read` | Query linking status |
 | `linking.write` | Submit in-app linking decisions |
-| `webhook.write` | Submit match results |
+| `webhook.write` | Submit contest results |
 
 Grants are assigned individually. Inspect the `scope` claim on the issued token instead of assuming all grants are present.
 

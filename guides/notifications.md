@@ -1,10 +1,10 @@
 # Notifications & Deep Linking
 
-This guide explains how a **Video Game Studio** can direct players into Sbarter and, subject to an agreed integration, surface competition messages and one-tap actions that return players to their assigned match in the **Video Game**.
+This guide explains how a **Video Game Studio** can direct players into Sbarter and, subject to an agreed integration, surface competition messages and one-tap actions that return players to their assigned contest in the **Video Game**.
 
-The guiding principle is simple: **Sbarter manages challenges, tournaments, wagers and competition decisions; the Video Game Studio provides game identity, gameplay and optional surfaces for links and messages.** A Studio should not need to reproduce Sbarter's contest-management screens.
+The guiding principle is simple: **Sbarter manages challenges, tournaments, stakes and competition decisions; the Video Game Studio provides game identity, gameplay and optional surfaces for links and messages.** A Studio should not need to reproduce Sbarter's contest-management screens.
 
-> **Integration status:** Sbarter publishes a deep-link generation operation for account linking and an in-game linking validation flow. Generic Studio notification delivery, match-ready events, match launch/readiness and targeted opponent discovery are **not present in the current published OpenAPI contracts**. These are proposed journey capabilities and require separate agreement.
+> **Integration status:** Sbarter publishes a deep-link generation operation for account linking and an in-game linking validation flow. Generic Studio notification delivery, contest-ready events, contest launch/readiness and targeted opponent discovery are **not present in the current published OpenAPI contracts**. These are proposed journey capabilities and require separate agreement.
 
 ## Integration patterns
 
@@ -13,7 +13,7 @@ The guiding principle is simple: **Sbarter manages challenges, tournaments, wage
 | Game → Sbarter account linking | Player taps a Sbarter link shown inside the Video Game | Studio presents the link; Sbarter handles login, confirmation and binding | **Published linking-generation API**, subject to the Studio implementation |
 | Game → Sbarter browse or contest | Player taps game menu item, private invitation or tournament promotion | Sbarter owns destination page and entry decision | **Proposed destination / presentation experience**; do not assume every URL contract exists |
 | Sbarter → Video Game account confirmation | Player confirms an existing known game account inside the Video Game | Sbarter requests verification; Studio handles in-game confirmation | **Published validation + callback APIs** |
-| Sbarter → Video Game match launch | Player selects **Start match** / **Go to match** in Sbarter | Studio owns match entry and waiting-room behaviour | **Under Development** |
+| Sbarter → Video Game contest launch | Player selects **Start contest** / **Go to contest** in Sbarter | Studio owns contest entry and waiting-room behaviour | **Under Development** |
 | Sbarter → Studio in-game notices | Player sees private invite, opponent ready or next round available inside the Video Game | Sbarter generates event; Studio decides in-game display | **Under Development** |
 
 ## Journey A: Player enters Sbarter from a Video Game
@@ -39,7 +39,7 @@ The onboarding source proposes a welcome page for first-time players, a deferred
 | [`POST /v1/linking/deeplink/generate`](/server/vgp-deeplink/generatelinkingdeeplink) | Video Game Studio → Sbarter | Generates an account-linking deep link for a game account. The Studio can present or distribute it through an agreed channel. |
 | [`POST /v1/linking/status`](/server/vgp-link-status) | Video Game Studio → Sbarter | Checks the account-link status for a publisher-side identity. |
 
-These operations are **linking-related**. Do not assume the generation endpoint also produces a universal deep link for arbitrary challenges, tournaments or provisioned matches unless the schema and routing contract are extended to support those destinations.
+These operations are **linking-related**. Do not assume the generation endpoint also produces a universal deep link for arbitrary challenges, tournaments or provisioned contests unless the schema and routing contract are extended to support those destinations.
 
 ## Journey B: Sbarter requests verification inside the Video Game
 
@@ -58,23 +58,23 @@ When Sbarter already knows the publisher account identifier, it can invoke the e
 | --- | --- | --- | --- |
 | Private 1v1 invitation | “You have been challenged” | Specific challenge in Sbarter | **Under Development**: generic Studio notification API |
 | Challenge accepted | “Opponent waiting” | Challenge details in Sbarter | **Under Development**: Studio message and direct-link support |
-| Both stakes locked and match prepared | “Start match” | Existing match in Video Game | **Under Development**: match provisioning and launch contract |
-| Tournament bracket ready | “Go to match” | Assigned first-round match | **Under Development** |
-| Next tournament round ready | “Next round ready” / “Go to match” | Next assigned match | **Under Development** |
+| Both stakes locked and contest prepared | “Start contest” | Existing contest in Video Game | **Under Development**: contest provisioning and launch contract |
+| Tournament bracket ready | “Go to contest” | Assigned first-round contest | **Under Development** |
+| Next tournament round ready | “Next round ready” / “Go to contest” | Next assigned contest | **Under Development** |
 | Missing tournament result with both players present | “Report your result” | Manual reporting screen in Sbarter | **Under Development**; reports remain Sbarter-owned |
 
-In all cases, **Sbarter remains the system of record for competition eligibility, fees, bracket decisions and settlement**. A Studio displays agreed messages and routes the player; it does not decide payouts or accept wagers on Sbarter's behalf.
+In all cases, **Sbarter remains the system of record for competition eligibility, protocol fees, bracket decisions and settlement**. A Studio displays agreed messages and routes the player; it does not decide rewards or accept stakes on Sbarter's behalf.
 
-## Proposed one-tap match launch
+## Proposed one-tap contest launch
 
 ```mermaid
 flowchart TD
-    A[Sbarter locks contest or schedules tournament match] --> B[Sbarter registers two-player session with Studio]
-    B --> C{Studio can provide a match-ready launch mechanism?}
-    C -->|Yes, agreed extension| D[Display Start match or Go to match]
-    D --> E[Launch Video Game into specific pre-created match]
+    A[Sbarter locks contest or schedules tournament contest] --> B[Sbarter registers two-player session with Studio]
+    B --> C{Studio can provide a contest-ready launch mechanism?}
+    C -->|Yes, agreed extension| D[Display Start contest or Go to contest]
+    D --> E[Launch Video Game into specific pre-created contest]
     E --> F[First player waits for opponent]
-    F --> G[Second player joins same match]
+    F --> G[Second player joins same contest]
     C -->|Not yet| H[Define fallback behaviour before launch]
 ```
 
@@ -87,10 +87,10 @@ No generic Studio notification endpoint is currently published. Before a Studio 
 | Concern | Contract decision required |
 | --- | --- |
 | Delivery direction | Whether Sbarter calls a Studio-hosted endpoint or publishes another authenticated event channel |
-| Event types | Standard event identifiers for invites, match-ready, next round and manual-report requests |
+| Event types | Standard event identifiers for invites, contest-ready, next round and manual-report requests |
 | Target identity | Stable game-account ID and game identifier; no reliance on display name as a key |
 | Destination | Validated link / intent into Sbarter or a specific game session |
-| Expiry | Notification validity and handling of expired contest or match windows |
+| Expiry | Notification validity and handling of expired contest or contest windows |
 | Idempotency | Stable event ID, duplicate delivery, retry policy and ordering |
 | Visibility | Delivery acknowledgement versus actual in-game display, offline players, push availability |
 | Security | Authentication, signature/token validation, minimal personally identifying data and allowed destinations |
@@ -105,17 +105,17 @@ These are **proposed contract considerations**, not fields of any currently publ
 - Expired or reused linking context, private invite or contest completion window.
 - Challenge cancelled, declined or filled between notification delivery and click.
 - Notification delivered twice, delayed, out of order or when the user is offline.
-- Match not provisioned, provisioned but not ready, or first player waiting when the second cannot join.
+- Contest not provisioned, provisioned but not ready, or first player waiting when the second cannot join.
 - Opening a link from a mobile browser rather than the game or Sbarter app.
-- Fallback when the Studio cannot support in-game notification or one-tap match launch.
+- Fallback when the Studio cannot support in-game notification or one-tap contest launch.
 
 ## Video Game Studio implementation checklist
 
 - [ ] Confirm which Sbarter entry points can be shown inside the Video Game and how the authenticated `providerUserId` is carried securely.
 - [ ] Implement published account-linking operations where applicable, including status and in-game confirmation.
 - [ ] Confirm the cross-app linking and deferred-install experience on supported mobile platforms.
-- [ ] Agree a notification delivery and deep-link destination contract before showing Studio-side private invites or match-ready prompts.
-- [ ] Agree a match provisioning/readiness/launch capability before promising one-tap entry into an assigned match.
+- [ ] Agree a notification delivery and deep-link destination contract before showing Studio-side private invites or contest-ready prompts.
+- [ ] Agree a contest provisioning/readiness/launch capability before promising one-tap entry into an assigned contest.
 - [ ] Verify that every displayed message can handle cancellation, expiration, re-entry and duplicate delivery safely.
 
 ## Related documentation
@@ -128,4 +128,3 @@ These are **proposed contract considerations**, not fields of any currently publ
 - [Sbarter API](/server)
 - [Game Studio API](/client)
 
-> **Sources:** *RB3 x Sbarter onboarding v5* (two entry journeys), *1v1 and tournament player journey v8* (pages 1–3), and the current published `server.yaml` / `client.yaml`. Partner-specific names have been generalized intentionally.

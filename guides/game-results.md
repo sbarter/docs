@@ -1,12 +1,12 @@
 # Game Results & Reconciliation
 
-This guide explains how a **Video Game Studio** reports authoritative match results to Sbarter and how the proposed competition journeys resolve matches when no reliable game-server result is received. It applies to both standalone **1v1 challenges** and individual two-player **tournament matches**.
+This guide explains how a **Video Game Studio** reports authoritative contest results to Sbarter and how the proposed competition journeys resolve contests when no reliable game-server result is received. It applies to both standalone **1v1 challenges** and individual two-player **tournament contests**.
 
-> **Integration status:** The match-result webhook is defined in the published Sbarter API. Studio-side result lookup, login/presence evidence, finality reconciliation and manual tournament result workflows are **not specified by the current published OpenAPI contracts**. The exception rules below come from the supplied player journey v8 and remain subject to product and Studio implementation agreement.
+> **Integration status:** The contest-result webhook is defined in the published Sbarter API. Studio-side result lookup, login/presence evidence, finality reconciliation and manual tournament result workflows are **not specified by the current published OpenAPI contracts**. The exception rules below come from the supplied player journey v8 and remain subject to product and Studio implementation agreement.
 
 ## Responsibility boundary
 
-- **Video Game Studio:** Hosts gameplay, produces a trusted server-side match result and delivers it to the Sbarter callback. If subsequently agreed, supplies trusted evidence about whether each player was logged in during the completion window.
+- **Video Game Studio:** Hosts gameplay, produces a trusted server-side contest result and delivers it to the Sbarter callback. If subsequently agreed, supplies trusted evidence about whether each player was logged in during the completion window.
 - **Sbarter:** Correlates the result with a registered session, applies competition-specific rules, determines the contest outcome, advances tournament brackets where applicable and settles funds.
 - **Player:** Plays inside the Video Game. In the proposed **tournament-only** missing-result scenario, may submit a manual result report **in the Sbarter app**, never through a required publisher reporting screen.
 
@@ -21,7 +21,7 @@ This guide explains how a **Video Game Studio** reports authoritative match resu
 | Register a two-player game session | Sbarter → Video Game Studio | [`POST /v1/session`](/client) | **Published**; link currently opens the Game Studio API until its exact operation permalink is verified. |
 | Submit the authoritative result | Video Game Studio → Sbarter | [`POST /v1/webhooks/game-studio/match-result`](/server) | **Published**; link currently opens the Sbarter API until its exact operation permalink is verified. |
 | Retrieve a result from the Studio after a missed callback | Sbarter → Video Game Studio | No published operation | **Under Development**. |
-| Request login/presence evidence during a match window | Sbarter → Video Game Studio | No published operation | **Under Development**. |
+| Request login/presence evidence during a contest window | Sbarter → Video Game Studio | No published operation | **Under Development**. |
 | Request manual tournament results from players | Sbarter app / proposed in-game notification | No published Studio API operation | **Under Development**; any Studio notification contract is separate. |
 
 ### Authoritative result submission
@@ -32,10 +32,10 @@ During `POST /v1/session`, Sbarter supplies the `webhookUrl` that the Studio **m
 | --- | --- | --- |
 | `providerGameId` | Required | Video Game identifier |
 | `sessionId` | Required, UUID | Canonical Sbarter session identity |
-| `matchId` | Required | Studio-side identifier of the match |
+| `matchId` | Required | Studio-side identifier of the contest |
 | `status` | Required | One of `win`, `draw`, `failed`, `voided` |
 | `players` | Required, exactly two entries | Each entry requires `providerUserId`, `internalId`, `outcome`; `outcome` is `win`, `loss` or `draw` |
-| `startedAt`, `finishedAt` | Optional timestamps | Match activity times when available |
+| `startedAt`, `finishedAt` | Optional timestamps | Contest activity times when available |
 
 The `internalId` property is marked **required but nullable** in the published `PlayerGameResult` schema. Consult the OpenAPI reference for exact serialization requirements. Do not infer a winner solely from `status` without evaluating the two player outcomes and the competition rules.
 
@@ -45,7 +45,7 @@ The `internalId` property is marked **required but nullable** in the published `
 
 ### Example payload
 
-The following is a **synthetic illustration** of the published schema, not live account or match data:
+The following is a **synthetic illustration** of the published schema, not live account or contest data:
 
 ```json
 {
@@ -72,7 +72,7 @@ The following is a **synthetic illustration** of the published schema, not live 
 
 Where no trusted game-server outcome arrives within the configured competition window, the source journey proposes using Studio-supplied evidence of which players were logged in **during that window**.
 
-| Studio evidence | Standalone 1v1 challenge | Tournament match |
+| Studio evidence | Standalone 1v1 challenge | Tournament contest |
 | --- | --- | --- |
 | Exactly one player logged in | Present player wins by forfeit; absent player loses | Present player advances by forfeit |
 | Neither player logged in | Void; refund both stakes | Void; eliminate both; downstream bracket may award a bye |
@@ -100,9 +100,9 @@ The supplied journey v8 proposes a **3-minute** response window. Players choose 
 
 The source table lists representative report combinations; reverse-player cases should be handled symmetrically where the rule permits. **Do not implement a broader conflict-resolution matrix without an approved product specification.**
 
-### What happens when a tournament match is void
+### What happens when a tournament contest is void
 
-The source journey removes both participants from the tournament and gives the next-round opponent a bye, when applicable. If the **final** is void, the example allocates the combined first and second prizes equally, **40% of the prize pool to each finalist** under the source's 55% / 25% prize structure. This outcome is an **example tournament rule**, not a universal platform percentage.
+The source journey removes both participants from the tournament and gives the next-round opponent a bye, when applicable. If the **final** is void, the example allocates the combined first and second rewards equally, **40% of the rewards pool to each finalist** under the source's 55% / 25% reward structure. This outcome is an **example tournament rule**, not a universal platform percentage.
 
 ## Reconciliation and operational requirements
 
@@ -114,16 +114,16 @@ The following are recommended implementation requirements, **not existing publis
 4. Define an explicit reconciliation mechanism (for example, Studio-hosted result lookup) for missed or delayed callbacks.
 5. Agree whether a final result can be revised while unsettled, and ensure duplicate delivery never generates duplicate financial settlement.
 6. Specify authoritative presence evidence, its time granularity and privacy/security controls before enabling forfeiture decisions.
-7. Record an auditable decision for every win, forfeit, void, manual report and payout.
+7. Record an auditable decision for every win, forfeit, void, manual report and settlement.
 
 ## Video Game Studio implementation checklist
 
 - [ ] Submit game-server-authoritative outcomes to the exact `webhookUrl` supplied in session registration.
 - [ ] Use authenticated requests with `webhook.write` scope.
 - [ ] Implement safe retries for transient failures, with deduplication based on `sessionId + matchId`.
-- [ ] Provide stable identifiers for the game, match and two participating accounts.
+- [ ] Provide stable identifiers for the game, contest and two participating accounts.
 - [ ] Agree recovery, presence-evidence and result-finality rules with Sbarter before enabling exception-based settlement.
-- [ ] Test duplicate, delayed, missing, conflicting and voided results for both 1v1 and tournament matches.
+- [ ] Test duplicate, delayed, missing, conflicting and voided results for both 1v1 and tournament contests.
 
 ## Related documentation
 

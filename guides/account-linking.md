@@ -11,7 +11,7 @@ Two entry points are described: a player may arrive from **a Video Game (Journey
 [View original PDF](./pdf/Game%20x%20Sbarter%20account%20binding.pdf)
 ### Player and platform sequence
 
-1. The authenticated player in the Video Game selects a Sbarter link from the game's menu, banner, post-match screen or another supported entry point. The link carries the Video Game account identifier.
+1. The authenticated player in the Video Game selects a Sbarter link from the game's menu, banner, post-contest screen or another supported entry point. The link carries the Video Game account identifier.
 2. If Sbarter is installed, it opens with that context. For a new player without the app, the proposal shows a Video Game welcome page followed by installation; a deferred deep link preserves the account context.
 3. Sbarter determines whether the player is new, registered but unbound, or already bound to the same Video Game identity.
 4. New players register; returning players sign in. An existing matching binding needs no new action.
@@ -24,7 +24,7 @@ Two entry points are described: a player may arrive from **a Video Game (Journey
 
 | Technical action | Published operation | Implementation note |
 | --- | --- | --- |
-| Generate a Video Game-linked entry point | [`POST /v1/linking/deeplink/generate`](/server/vgp-deeplink/generatelinkingdeeplink) | Your game calls this with the player's account id in your system. Sbarter returns a single-use link that you can deliver however you like — push, in-game message, email. When player taps it while on their Mobile Device, the Sbarter app opens (or fallback page opens), they sign in, and they see a confirmation screen naming your game and the account. After they confirm it, your game appears in their Sbarter library |
+| Generate a Video Game-linked entry point | [`POST /v1/linking/deeplink/generate`](/server/vgp-deeplink/generatelinkingdeeplink) | Your game calls this with the player's account id in your system. Sbarter returns a single-use link that you can deliver however you like; push, in-game message, email. When player taps it while on their Mobile Device, the Sbarter app opens (or fallback page opens), they sign in, and they see a confirmation screen naming your game and the account. After they confirm it, your game appears in their Sbarter library |
 | Check whether accounts are linked | [`POST /v1/linking/status`](/server/vgp-link-status) | Publisher can check the account-link status. |
 | Read game-side player metadata | [`POST /v1/sbarter/gamer/profile`](/client/provider-profile) | Sbarter-to-publisher contract. Do not assume that the specific Video Game skill-rating attribute is already exposed without checking the schema. |
 | Register/sign in, eligibility and funds | Sbarter application responsibilities | Not publisher API operations in this guide. |

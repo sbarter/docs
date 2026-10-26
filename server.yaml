@@ -157,7 +157,7 @@ paths:
           description: Token is missing the linking.deeplink.write scope
         "404":
           description: >-
-            No game of this studio matches providerGameId, or the optional destination is missing,
+            No game of this studio contests providerGameId, or the optional destination is missing,
             belongs to another game, has expired, or is not open for participation
         "500":
           description: Internal server error
@@ -457,7 +457,7 @@ components:
         providerGameId:
           type: string
           description: Stable provider-side game identifier.
-          example: "real boxing 3"
+          example: "chess game"
         sessionId:
           type: string
           format: uuid
@@ -465,8 +465,8 @@ components:
           example: "123e4567-e89b-12d3-a456-426614174000"
         matchId:
           type: string
-          description: Provider-side match identifier associated with the reported result.
-          example: "real-boxing-match-abc-123"
+          description: Provider-side contest identifier associated with the reported result.
+          example: "contest-abc-123"
         status:
           $ref: '#/components/schemas/GameResultStatus'
         startedAt:
@@ -483,7 +483,7 @@ components:
           type: array
           minItems: 2
           maxItems: 2
-          description: Exactly two player result entries for the current Level 3 1v1 match flow.
+          description: Exactly two player result entries for the current 1v1 contest flow.
           items:
             $ref: '#/components/schemas/PlayerGameResult'
 

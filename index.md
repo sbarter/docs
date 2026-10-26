@@ -33,7 +33,7 @@ markdown:
         Integrate your video game with Sbarter's
         skill-based competition platform.
         Link player accounts, register game sessions
-        and submit authoritative match results,
+        and submit authoritative contest results,
         while Sbarter manages the competition experience.
       </p>
 
@@ -51,7 +51,7 @@ markdown:
     </div>
   </div>
 </div>
-Connect your video game to Sbarter so players can link their game accounts, enter skill-based challenges and tournaments, play in your game, and receive competition results and payouts through Sbarter.
+Connect your video game to Sbarter so players can link their game accounts, enter skill-based challenges and tournaments, play in your game, and receive competition results and settlements through Sbarter.
 
 
 **Your studio runs the game. Sbarter manages the competition experience.**
@@ -63,7 +63,7 @@ Connect your video game to Sbarter so players can link their game accounts, ente
     **Read Getting Started →**
   {% /card %}
   {% card title="Explore integration journeys" to="./guides/index.md" %}
-    Follow player account linking, 1v1 challenges, tournaments, match results, notifications and deep links.
+    Follow player account linking, 1v1 challenges, tournaments, contest results, notifications and deep links.
 
     **Browse integration guides →**
   {% /card %}
@@ -76,13 +76,13 @@ Connect your video game to Sbarter so players can link their game accounts, ente
 
 ## How the integration works
 
-Sbarter handles the competition lifecycle while your game remains the authoritative source for gameplay and game-server match results.
+Sbarter handles the competition lifecycle while your game remains the authoritative source for gameplay and game-server contest results.
 
 | Stage | Sbarter | Video Game Studio |
 | --- | --- | --- |
 | **1. Link accounts** | Connects a Sbarter player to a game account | Identifies and validates the game account |
-| **2. Enter competitions** | Manages eligibility, challenges, tournaments and wager or entry-fee handling | Supplies relevant player and game information |
-| **3. Prepare matches** | Determines the opponents and requests a session | Registers or provisions the game session |
+| **2. Enter competitions** | Manages eligibility, challenges, tournaments and stake | Supplies relevant player and game information |
+| **3. Prepare contests** | Determines the opponents and requests a session | Registers or provisions the game session |
 | **4. Play and report** | Coordinates competition status and evaluates outcomes | Runs gameplay and supplies authoritative results |
 | **5. Complete the contest** | Applies competition rules and settles outcomes | Supports agreed exception-handling and reconciliation mechanisms |
 
@@ -103,7 +103,7 @@ Follow this sequence to get from technical onboarding to a first end-to-end test
   {% card title="Sbarter API" to="./server.yaml" %}
     **Hosted by Sbarter · Called by the Video Game Studio**
 
-    Includes account-linking operations and match-result submission. View the published endpoint definitions, authentication and payload schemas.
+    Includes account-linking operations and contest-result submission. View the published endpoint definitions, authentication and payload schemas.
 
     **View Sbarter API →**
   {% /card %}
@@ -118,17 +118,17 @@ Follow this sequence to get from technical onboarding to a first end-to-end test
 
 ## Design for real player journeys
 
-The technical contracts fit into an end-to-end experience. Use the guides to understand what happens before, during and after a match, including cases where a result is missing or a player does not participate.
+The technical contracts fit into an end-to-end experience. Use the guides to understand what happens before, during and after a contest, including cases where a result is missing or a player does not participate.
 
 {% cards %}
   {% card title="Account linking" to="./guides/account-linking.md" %}
     See both the game-first and Sbarter-first account-binding journeys.
   {% /card %}
   {% card title="1v1 challenges" to="./guides/one-v-one.md" %}
-    Understand acceptance, match preparation, game launch and settlement.
+    Understand acceptance, contest preparation, game launch and settlement.
   {% /card %}
   {% card title="Tournaments" to="./guides/tournaments.md" %}
-    Follow registration, brackets, individual rounds and prize distribution.
+    Follow registration, brackets, individual rounds and reward distribution.
   {% /card %}
   {% card title="Results and recovery" to="./guides/game-results.md" %}
     Learn about authoritative results, incomplete sessions and exceptional outcomes.

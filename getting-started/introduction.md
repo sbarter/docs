@@ -4,11 +4,9 @@ Sbarter enables eligible players to participate in skill-based challenges and to
 
 ## What your integration does
 
-The published Level 3 integration contract covers three core functions:
-
 1. **Account linking:** establish an association between a player's Sbarter identity and their stable game-studio account identifier.
 2. **Session registration:** accept a game-session registration request from Sbarter for two linked players.
-3. **Match results:** deliver the authoritative game result to Sbarter using the callback URL provided during session registration.
+3. **Contest results:** deliver the authoritative game result to Sbarter using the callback URL provided during session registration.
 
 The integration also supports retrieval of the game studio's current player profile snapshot, which may contain game-specific statistics in `profileStats`.
 
@@ -18,7 +16,7 @@ The integration also supports retrieval of the game studio's current player prof
 | --- | --- |
 | Player experience for challenges and tournaments | Game-account identification and authentication |
 | Competition participation and eligibility decisions | Game session registration and execution |
-| Competition results interpretation and financial settlement | Authoritative gameplay data and match outcomes |
+| Competition results interpretation and financial settlement | Authoritative gameplay data and contest outcomes |
 | Sbarter account linking and token issuance | In-game linking confirmation when used |
 
 ## Two API directions

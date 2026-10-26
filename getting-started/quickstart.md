@@ -1,6 +1,6 @@
 # Quick Start
 
-This guide shows how to prepare a game-studio integration against the currently published Level 3 API contract.
+This guide shows how to prepare a game-studio integration against the currently published API contract.
 
 ## Prerequisites
 
@@ -52,7 +52,7 @@ Implement `POST /v1/sbarter/gamer/profile`. Return the required `providerDisplay
 
 Implement `POST /v1/session`. Accept the canonical Sbarter `sessionId`, exactly two players, `expiresAt` and `webhookUrl`. Repeating a registration with the same `sessionId` and effective payload must be idempotent.
 
-## 5. Submit a match result
+## 5. Submit a contest result
 
 Post the authoritative result to the callback URL supplied with the session, using the required OAuth bearer token and `webhook.write` grant. The published Sbarter receiving operation is `POST /v1/webhooks/game-studio/match-result`.
 
@@ -62,7 +62,7 @@ Retry transient delivery failures and preserve the existing `sessionId + matchId
 
 Test successful and unsuccessful linking, expired and redeemed links, repeated session registration, valid results, duplicate result submissions, invalid credentials and transient failures.
 
-> **Important:** This quick start covers the *published* API operations. The full one-tap match-launch and missing-result exception journeys require additional capabilities tracked separately as **Under Development** until their contracts are published.
+> **Important:** This quick start covers the *published* API operations. The full one-tap contest-launch and missing-result exception journeys require additional capabilities tracked separately as **Under Development** until their contracts are published.
 
 ## Next
 

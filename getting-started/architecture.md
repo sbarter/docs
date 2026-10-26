@@ -1,4 +1,4 @@
-# Integration Architecture
+# Integration Model
 
 Sbarter orchestrates the competition while the game studio operates the game and supplies its authoritative results. The published integration is built around HTTPS APIs and a Sbarter-hosted result callback.
 
@@ -14,7 +14,7 @@ Sbarter orchestrates the competition while the game studio operates the game and
 | Return a linking decision | Game studio → Sbarter | `POST /v1/linking/in-app/{requestId}` |
 | Retrieve a player profile snapshot | Sbarter → Game studio | `POST /v1/sbarter/gamer/profile` |
 | Register a game session | Sbarter → Game studio | `POST /v1/session` |
-| Submit match results | Game studio → Sbarter | `POST /v1/webhooks/game-studio/match-result` |
+| Submit contest results | Game studio → Sbarter | `POST /v1/webhooks/game-studio/match-result` |
 
 See **API Reference** in the left navigation for the authoritative request and response schemas.
 
@@ -23,8 +23,6 @@ See **API Reference** in the left navigation for the authoritative request and r
 **Game-studio initiated:** the studio generates a single-use deep link for its authenticated player. The player signs in to Sbarter and completes linking. The studio can subsequently query linking status. Redeeming the deep link does not itself trigger a studio callback.
 
 **Sbarter initiated:** Sbarter requests in-game confirmation for an already-known `providerUserId`. The studio presents the confirmation to the player and calls the exact `webhookUrl` supplied by Sbarter to return the decision.
-
-> **Journey alignment:** An onboarding journey that starts in Sbarter *without* a known `providerUserId` requires a separately agreed account-discovery mechanism. That capability is not defined by the published Level 3 confirmation request.
 
 ## Session and result flow
 
@@ -39,6 +37,3 @@ See **API Reference** in the left navigation for the authoritative request and r
 - **Studio → Sbarter:** OAuth 2.0 client credentials with appropriate grants.
 - **Sbarter → Studio:** the studio's `X-API-Key` as specified in the published Game Studio API.
 
-## Under Development
-
-The approved RB3 player journeys also describe direct match launch, in-game notifications, result reconciliation and historical player presence checks. These capabilities are not defined as released operations in the currently published `client.yaml` / `server.yaml` and should remain clearly labelled **Under Development** until published and deployed.
