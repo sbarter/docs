@@ -30,10 +30,8 @@ These timings, thresholds and policies are drawn from the supplied example. They
 | Journey action | Responsible system | Published API / status |
 | --- | --- | --- |
 | Create tournament, register players, hold stakes, generate bracket | Sbarter | Sbarter application/backend responsibility, not a Studio API operation. |
-| Register each bracket contest | Sbarter → Studio | [`POST /v1/session`](/client), **published Game Studio API**; schema currently specifies exactly two players per session. Operation permalink should be verified in Redocly. |
 | Display next-round notification in Video Game | Sbarter → Studio | **Under Development:** publisher notification contract. |
 | Open a specific pre-created contest from the Sbarter app or Video Game | Sbarter and Studio | **Under Development:** contest-launch / readiness contract. |
-| Report game-server outcome for a contest | Studio → Sbarter | [`POST /v1/webhooks/game-studio/match-result`](/server), **published Sbarter API**; operation permalink should be verified in Redocly. |
 | Determine advancement, voids, byes, rewards | Sbarter | Internal competition adjudication and settlement. |
 | Obtain presence evidence or reconcile missing results | Studio ↔ Sbarter | **Under Development:** no corresponding presence or result-retrieval operation in supplied OpenAPI contracts. |
 
@@ -101,7 +99,7 @@ The Protocol fee and the Studio's share are deducted from the reward pool. It al
 - [Integration Overview](./)
 - [Account Linking](./account-linking/)
 - [1v1 Challenge Integration](./one-v-one/)
-- [Game Studio API](/client)
-- [Sbarter API](/server)
+- [Game Studio API](/client/session/paths/~1v1~1session/post)
+- [Sbarter API](/server/webhook/postmatchresultwebhook)
 
 > **Source:** *1v1 and tournament player journey v8*, pages 2–3, and the supplied `server.yaml` / `client.yaml`. A dedicated **Game Results & Reconciliation** guide will provide the full manual-report decision matrix and operational recovery rules.

@@ -57,7 +57,7 @@ Use the returned bearer token when calling protected Sbarter API endpoints.
 
 Once credentials exist, the Studio Web Portal displays their status and management controls.
 
-![Client secret confirmation](../images/savedcredentials.png)
+![Studio Web Portal showing active API credentials and management actions](../images/savedcredentials.png)
 
 ### Rotate Secret
 
@@ -86,7 +86,7 @@ Only authorised studio administrators should perform credential rotation or revo
 
 ## Game studio calling Sbarter
 
-Sbarter issues `client_id` and `client_secret` credentials to each studio. Obtain a bearer access token using the OAuth 2.0 client credentials grant and include it on protected Sbarter API calls:
+Authorised studio users generate `client_id` and `client_secret` in the Studio Web Portal. Obtain a bearer access token using the OAuth 2.0 client credentials grant and include it on protected Sbarter API calls:
 
 ```http
 Authorization: Bearer <access_token>
@@ -107,16 +107,20 @@ grant_type=client_credentials&client_id=<client_id>&client_secret=<client_secret
 
 Use the correct Keycloak host for the selected environment, as specified in the Sbarter API reference. Never include real client secrets in documentation, logs or source control.
 
-## OAuth grants
+Find the detailed documentation of this request here: 
+[Obtain Access Token (Client Credentials)](./server/oauth-2.0-client-credentials/obtainclientcredentialstoken#oauth-2.0-client-credentials/obtainclientcredentialstoken/request)
 
-| Grant | Purpose |
+
+## OAuth scopes
+
+| Scope | Purpose |
 | --- | --- |
 | `linking.deeplink.write` | Generate linking deep links |
 | `linking.read` | Query linking status |
 | `linking.write` | Submit in-app linking decisions |
 | `webhook.write` | Submit contest results |
 
-Grants are assigned individually. Inspect the `scope` claim on the issued token instead of assuming all grants are present.
+Scopes are assigned individually. Inspect the `scope` claim on the issued token instead of assuming every scope is present.
 
 ## Sbarter calling the game studio
 
@@ -132,7 +136,7 @@ The studio issues this credential for Sbarter's server-to-server calls, includin
 
 - Use TLS for all API interactions.
 - Keep credentials in a secret-management system rather than in application code or Markdown files.
-- Respect token expiry and refresh tokens as needed.
+- Cache the access token and request a new token before `expires_in` elapses. Client Credentials tokens do not use refresh tokens; avoid requesting a token for every API call.
 - Limit credential access to the intended environment and integration.
 - Avoid including tokens, secrets or raw personal data in logs.
 - Use the sandbox/test environment before production.
@@ -142,7 +146,7 @@ The studio issues this credential for Sbarter's server-to-server calls, includin
 | HTTP status | Meaning / action |
 | --- | --- |
 | `401 Unauthorized` | Missing, expired or invalid credential; obtain a valid token or verify API key |
-| `403 Forbidden` | Token does not provide the required grant, or access is not permitted |
+| `403 Forbidden` | Token does not provide the required scope, or access is not permitted |
 | `429 Too Many Requests` | Back off according to the receiving API's rate limits, where applicable |
 
 See the individual operations in **API Reference** for the definitive supported response codes and security requirements.

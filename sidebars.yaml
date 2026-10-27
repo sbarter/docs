@@ -5,14 +5,14 @@
 - group: Getting Started
   expanded: true
   items:
+    - page: getting-started/quickstart.md
+      label: Quick Start
     - page: getting-started/introduction.md
       label: Introduction
     - page: getting-started/architecture.md
       label: Integration Model
     - page: getting-started/authentication.md
       label: Environments & Credentials
-    - page: getting-started/quickstart.md
-      label: Quick Start
 
 
 - group: Integration Guides

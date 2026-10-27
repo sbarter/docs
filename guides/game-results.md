@@ -18,8 +18,8 @@ This guide explains how a **Video Game Studio** reports authoritative contest re
 
 | Action | Direction | API reference | Status |
 | --- | --- | --- | --- |
-| Register a two-player game session | Sbarter → Video Game Studio | [`POST /v1/session`](/client) | **Published**; link currently opens the Game Studio API until its exact operation permalink is verified. |
-| Submit the authoritative result | Video Game Studio → Sbarter | [`POST /v1/webhooks/game-studio/match-result`](/server) | **Published**; link currently opens the Sbarter API until its exact operation permalink is verified. |
+| Register a two-player game session | Sbarter → Video Game Studio | [`POST /v1/session`](/client/session/paths/~1v1~1session/post) | **Published**. |
+| Submit the authoritative result | Video Game Studio → Sbarter | [`POST /v1/webhooks/game-studio/match-result`](/server/webhook/postmatchresultwebhook) | **Published**. |
 | Retrieve a result from the Studio after a missed callback | Sbarter → Video Game Studio | No published operation | **Under Development**. |
 | Request login/presence evidence during a contest window | Sbarter → Video Game Studio | No published operation | **Under Development**. |
 | Request manual tournament results from players | Sbarter app / proposed in-game notification | No published Studio API operation | **Under Development**; any Studio notification contract is separate. |
@@ -131,7 +131,7 @@ The following are recommended implementation requirements, **not existing publis
 - [1v1 Challenge Integration](./one-v-one/)
 - [Tournament Integration](./tournaments/)
 - [Notifications & Deep Linking](./notifications/)
-- [Sbarter API](/server)
-- [Game Studio API](/client)
+- [Sbarter API](/server/webhook/postmatchresultwebhook)
+- [Game Studio API](/client/session/paths/~1v1~1session/post)
 
 > **Source:** *1v1 and tournament player journey v8*, especially page 3; current published `server.yaml` and `client.yaml`. All source-derived exception rules above are labelled as proposed until implementation is confirmed.

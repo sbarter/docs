@@ -39,8 +39,8 @@ markdown:
 
       <div class="sbarter-hero__actions">
         <a class="sbarter-btn sbarter-btn--primary"
-           href="/getting-started/introduction/">
-          Get Started
+           href="/getting-started/quickstart.md">
+          Quick Start
         </a>
 
         <a class="sbarter-btn sbarter-btn--secondary"

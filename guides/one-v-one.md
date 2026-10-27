@@ -23,14 +23,13 @@ This guide describes the player and system journey for a **1v1 skill-based chall
 | Hold stake | Sbarter checks eligibility and balance and places Player A's stake in escrow. | Sbarter | Internal platform workflow. |
 | Discover or invite | Open challenges appear in Sbarter. Private invites target a selected Video Game player; optional studio-side messages can point to Sbarter. | Sbarter; optionally Studio | Studio notification delivery: **Under Development**. |
 | Accept challenge | Player B accepts in Sbarter and the matching stake is held. For an open challenge, Player A confirms or rejects B; private invited opponents do not require another confirmation in the source flow. | Sbarter | Internal platform workflow. |
-| Lock and provision | After confirmation, Sbarter identifies two linked Video Game accounts and registers the game session. | Sbarter → Studio | [`POST /v1/session`](/client), **published Game Studio API**; link currently points to the API specification landing page, pending verification of operation permalink. |
 | Notify and launch | Both players see a contest-ready action. The proposed experience takes either player directly into their provisioned Video Game contest, with the first waiting for the second. | Sbarter; Studio | Direct launch and studio notifications: **Under Development**. |
-| Play and report | Studio's servers record the contest and send the final result to the callback provided at session registration. | Studio → Sbarter | [`POST /v1/webhooks/game-studio/match-result`](/server), **published Sbarter API**; link currently points to the API specification landing page, pending operation permalink. |
+| Play and report | Studio's servers record the contest and send the final result to the callback provided at session registration. | Studio → Sbarter | [`POST /v1/webhooks/game-studio/match-result`](/server/webhook/postmatchresultwebhook), **published Sbarter API**; link currently points to the API specification landing page, pending operation permalink. |
 | Adjudicate and settle | Sbarter validates the result, applies competition rules and settles escrow. | Sbarter | Internal platform workflow. |
 
 ## Game session registration: published contract
 
-**Operation:** [`POST /v1/session`](/client) (Game Studio API; Sbarter calls the Studio).
+**Operation:** [`POST /v1/session`](/client/session/paths/~1v1~1session/post) (Game Studio API; Sbarter calls the Studio).
 
 The current OpenAPI contract requires the following data in the request:
 
@@ -47,7 +46,7 @@ Repeated requests with the same `sessionId` and equivalent payload must be handl
 
 ## contest result: published contract
 
-**Operation:** [`POST /v1/webhooks/game-studio/match-result`](/server) (Sbarter API; Studio calls Sbarter).
+**Operation:** [`POST /v1/webhooks/game-studio/match-result`](/server/webhook/postmatchresultwebhook) (Sbarter API; Studio calls Sbarter).
 
 The published `GameResultWebhookPayload` requires `providerGameId`, `sessionId`, `matchId`, `status` and an array of exactly two `players`. Optional `startedAt` and `finishedAt` timestamps are also supported. The callback accepts safe duplicate retries and identifies a logical result using **`sessionId + matchId`**; the successful response is `202`.
 
@@ -79,7 +78,7 @@ The Studio must use the `webhookUrl` provided when the session was registered. S
 
 - [Integration Overview](./)
 - [Account Linking](./account-linking/)
-- [Game Studio API](/client)
-- [Sbarter API](/server)
+- [Game Studio API](/client/session/paths/~1v1~1session/post)
+- [Sbarter API](/server/webhook/postmatchresultwebhook)
 
 > **Source:** *1v1 and tournament player journey v8*, page 1 and the current `server.yaml` / `client.yaml`. See **Game Results & Reconciliation** and **Notifications & Deep Linking** when those guides are published.
