@@ -64,6 +64,7 @@ paths:
           schema:
             type: string
             format: uuid
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -78,7 +79,9 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: Forbidden
+          description: >-
+            Token is missing the linking.write scope, or the `User-Agent` header is missing or
+            empty (rejected at the network edge with an HTML body)
         "409":
           description: Request already processed (idempotency)
         "500":
@@ -122,6 +125,8 @@ paths:
       security:
         - OAuth2ClientCredentials:
             - linking.deeplink.write
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -154,7 +159,9 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: Token is missing the linking.deeplink.write scope
+          description: >-
+            Token is missing the linking.deeplink.write scope, or the `User-Agent` header is
+            missing or empty (rejected at the network edge with an HTML body)
         "404":
           description: >-
             No game of this studio contests providerGameId, or the optional destination is missing,
@@ -192,6 +199,8 @@ paths:
       security:
         - OAuth2ClientCredentials:
             - linking.read
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -226,7 +235,9 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: Token is missing the linking.read scope
+          description: >-
+            Token is missing the linking.read scope, or the `User-Agent` header is missing or
+            empty (rejected at the network edge with an HTML body)
         "500":
           description: Internal server error
 
@@ -244,6 +255,8 @@ paths:
       security:
         - OAuth2ClientCredentials:
             - webhook.write
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -258,7 +271,9 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: Forbidden
+          description: >-
+            Token is missing the webhook.write scope, or the `User-Agent` header is missing or
+            empty (rejected at the network edge with an HTML body)
         "500":
           description: Internal server error
 
@@ -276,6 +291,8 @@ paths:
       description: >
         Issues an access token using OAuth 2.0 Client Credentials Grant.
         The returned token_type is "Bearer".
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -305,6 +322,10 @@ paths:
           description: Invalid request
         "401":
           description: Invalid client credentials
+        "403":
+          description: >-
+            The `User-Agent` header is missing or empty (rejected at the network edge with an
+            HTML body, before the request reaches Keycloak)
         "429":
           description: Too many requests
         "500":
@@ -325,6 +346,21 @@ components:
             linking.deeplink.write: Generate linking deep links.
             linking.read: Read the link status of the studio's own provider accounts.
             webhook.write: Send match result webhooks to Sbarter.
+
+  parameters:
+    UserAgent:
+      name: User-Agent
+      in: header
+      required: true
+      description: >
+        Any non-empty value identifying your client. Requests without a `User-Agent` header, or
+        with an empty one, are rejected at the Sbarter network edge with `403 Forbidden` and an
+        HTML body, before they reach the token endpoint or the API. Most HTTP clients send it by
+        default; set it explicitly if your client strips default headers.
+      schema:
+        type: string
+        minLength: 1
+      example: <studio>-backend/1.0
 
   schemas:
     InAppLinkingResultWebhook:
