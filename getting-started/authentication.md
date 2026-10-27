@@ -97,6 +97,7 @@ The published token route is:
 ```http
 POST /realms/studio_investor/protocol/openid-connect/token
 Content-Type: application/x-www-form-urlencoded
+User-Agent: <studio>-backend/1.0
 ```
 
 Request body:
@@ -105,7 +106,28 @@ Request body:
 grant_type=client_credentials&client_id=<client_id>&client_secret=<client_secret>
 ```
 
+Example:
+
+```bash
+curl -X POST "https://<keycloak-host>/realms/studio_investor/protocol/openid-connect/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -H "User-Agent: <studio>-backend/1.0" \
+  -d "grant_type=client_credentials&client_id=<client_id>&client_secret=<client_secret>"
+```
+
 Use the correct Keycloak host for the selected environment, as specified in the Sbarter API reference. Never include real client secrets in documentation, logs or source control.
+
+### Required request headers
+
+| Header | Required | Value |
+| --- | --- | --- |
+| `Content-Type` | Yes, on the token request | `application/x-www-form-urlencoded` |
+| `User-Agent` | Yes, on every request to Sbarter | Any non-empty value identifying your client, e.g. `<studio>-backend/1.0` |
+| `Authorization` | Yes, on protected API calls | `Bearer <access_token>`. Not sent on the token request |
+
+Requests without a `User-Agent` header, or with an empty one, are rejected at the Sbarter network edge with `403 Forbidden` and an HTML body, before they reach the token endpoint or the API. Most HTTP clients (curl, Postman, Go, Python, Java, Node.js) send `User-Agent` by default; set it explicitly if your client strips default headers.
+
+Other headers your HTTP client adds automatically (`Host`, `Content-Length`, `Accept`, `Accept-Encoding`, `Connection`) are not required by Sbarter.
 
 Find the detailed documentation of this request here: 
 [Obtain Access Token (Client Credentials)](../server/oauth-2.0-client-credentials/obtainclientcredentialstoken)
@@ -145,8 +167,12 @@ The studio issues this credential for Sbarter's server-to-server calls, includin
 
 | HTTP status | Meaning / action |
 | --- | --- |
+| `400 invalid_request` on the token request | Body not sent as `application/x-www-form-urlencoded`, or a form parameter is missing |
+| `401 invalid_client` on the token request | Unknown `client_id`, or credentials used against the wrong environment |
+| `401 unauthorized_client` on the token request | Wrong, empty, rotated or revoked `client_secret` |
 | `401 Unauthorized` | Missing, expired or invalid credential; obtain a valid token or verify API key |
-| `403 Forbidden` | Token does not provide the required scope, or access is not permitted |
+| `403 Forbidden` with an HTML body | `User-Agent` header missing or empty; see [Required request headers](#required-request-headers) |
+| Any other `403 Forbidden` | Token does not provide the required scope, or access is not permitted |
 | `429 Too Many Requests` | Back off according to the receiving API's rate limits, where applicable |
 
 See the individual operations in **API Reference** for the definitive supported response codes and security requirements.
