@@ -108,7 +108,7 @@ grant_type=client_credentials&client_id=<client_id>&client_secret=<client_secret
 Use the correct Keycloak host for the selected environment, as specified in the Sbarter API reference. Never include real client secrets in documentation, logs or source control.
 
 Find the detailed documentation of this request here: 
-[Obtain Access Token (Client Credentials)](./server/oauth-2.0-client-credentials/obtainclientcredentialstoken#oauth-2.0-client-credentials/obtainclientcredentialstoken/request)
+[Obtain Access Token (Client Credentials)](../server/oauth-2.0-client-credentials/obtainclientcredentialstoken)
 
 
 ## OAuth scopes
