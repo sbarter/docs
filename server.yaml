@@ -21,7 +21,25 @@ info:
     without the others, so check the `scope` claim of the token you were issued rather than
     assuming the full set.
 
+
+    Errors. Besides the statuses listed per endpoint, a request that breaks a business rule is
+    answered `467` with a body of `{"error": "...", "errorCode": "GI00xx", "additionalData": {...}}`;
+    branch on `errorCode`, not on the message. GI0021 (deeplink already used) and GI0022 (deeplink
+    expired or unknown) are returned to the player who taps a link, never to the Game Studio.
+
 servers:
+  - url: https://partners.{environment}sbarter.com/{studio}
+    description: >-
+      Your studio's own partner host. Studios onboarded with a dedicated integration call every
+      endpoint below under their studio path; use the path Sbarter gave you.
+    variables:
+      environment:
+        default: "dev."
+        enum: ["dev.", "test.", ""]
+        description: "dev., test., or empty for production"
+      studio:
+        default: "your-studio"
+        description: The studio path Sbarter assigned you
   - url: https://webhook.dev.sbarter.com
     description: Sbarter API
   - url: https://keycloak.dev.sbarter.com
@@ -40,6 +58,28 @@ tags:
     description: Token issuance endpoint (Keycloak)
 
 paths:
+  /v1/auth/check:
+    get:
+      tags:
+        - OAuth 2.0 Client Credentials
+      summary: Check your credentials end to end
+      operationId: checkStudioAuth
+      description: >
+        Available on your partner host only. Answers 204 when the token is valid and was issued to
+        your studio, so you can verify your client credentials before any business endpoint is
+        live. A token issued to another studio is answered 403.
+
+        Authorization: Bearer <access_token>
+      security:
+        - OAuth2ClientCredentials: []
+      responses:
+        "204":
+          description: The token is valid and belongs to your studio
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: The token belongs to another studio
+
   /v1/linking/in-app/{requestId}:
     post:
       tags:
