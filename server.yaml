@@ -81,6 +81,13 @@ paths:
           description: Forbidden
         "409":
           description: Request already processed (idempotency)
+        "467":
+          description: >-
+            Business rule refusal; the reason is the errorCode in the response body.
+            GI0023 - an accepted decision for a providerUserId that is already linked to another
+            Sbarter user. A provider account can be linked to one Sbarter user at a time, so the
+            request is recorded as rejected and the player's pending link is cleared. The account
+            becomes free again once that player removes the game from their Sbarter library.
         "500":
           description: Internal server error
 
@@ -159,6 +166,14 @@ paths:
           description: >-
             No game of this studio matches providerGameId, or the optional destination is missing,
             belongs to another game, has expired, or is not open for participation
+        "467":
+          description: >-
+            Business rule refusal; the reason is the errorCode in the response body.
+            GI0023 - providerUserId is already linked to a Sbarter user, so no link is minted.
+            A provider account can be linked to one Sbarter user at a time; check it first with
+            `POST /v1/linking/status`. Several links for one account that is not linked yet are
+            allowed, but once one of them is redeemed the others are refused with the same code
+            and stay unused.
         "500":
           description: Internal server error
 
