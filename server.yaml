@@ -64,6 +64,7 @@ paths:
           schema:
             type: string
             format: uuid
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -78,7 +79,9 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: Forbidden
+          description: >-
+            Token is missing the linking.write scope, or the `User-Agent` header is missing or
+            empty (rejected at the network edge with an HTML body)
         "409":
           description: Request already processed (idempotency)
         "467":
@@ -108,7 +111,7 @@ paths:
         tapping the link and authenticating with Sbarter, after which the game is added to their
         library. **There is no callback to the studio** - this flow does not use the in-app
         linking webhook, and nothing is sent back when the link is redeemed. To find out whether
-        it worked, call `POST /v1/linking/status`.
+        it worked, call [`POST /v1/linking/status`](/server/vgp-link-status).
 
 
         The studio is taken from the access token, never from the payload. There is no way to mint
@@ -129,6 +132,8 @@ paths:
       security:
         - OAuth2ClientCredentials:
             - linking.deeplink.write
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -161,10 +166,12 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: Token is missing the linking.deeplink.write scope
+          description: >-
+            Token is missing the linking.deeplink.write scope, or the `User-Agent` header is
+            missing or empty (rejected at the network edge with an HTML body)
         "404":
           description: >-
-            No game of this studio matches providerGameId, or the optional destination is missing,
+            No game of this studio contests providerGameId, or the optional destination is missing,
             belongs to another game, has expired, or is not open for participation
         "467":
           description: >-
@@ -207,6 +214,8 @@ paths:
       security:
         - OAuth2ClientCredentials:
             - linking.read
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -241,7 +250,9 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: Token is missing the linking.read scope
+          description: >-
+            Token is missing the linking.read scope, or the `User-Agent` header is missing or
+            empty (rejected at the network edge with an HTML body)
         "500":
           description: Internal server error
 
@@ -259,6 +270,8 @@ paths:
       security:
         - OAuth2ClientCredentials:
             - webhook.write
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -273,14 +286,14 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: Forbidden
+          description: >-
+            Token is missing the webhook.write scope, or the `User-Agent` header is missing or
+            empty (rejected at the network edge with an HTML body)
         "500":
           description: Internal server error
 
   /realms/studio_investor/protocol/openid-connect/token:
     post:
-      # Token issuance itself: the client authenticates with client_id/client_secret in the body,
-      # so no bearer token is required here.
       security: []
       servers:
         - url: https://keycloak.dev.sbarter.com
@@ -293,6 +306,8 @@ paths:
       description: >
         Issues an access token using OAuth 2.0 Client Credentials Grant.
         The returned token_type is "Bearer".
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -322,6 +337,10 @@ paths:
           description: Invalid request
         "401":
           description: Invalid client credentials
+        "403":
+          description: >-
+            The `User-Agent` header is missing or empty (rejected at the network edge with an
+            HTML body, before the request reaches Keycloak)
         "429":
           description: Too many requests
         "500":
@@ -342,6 +361,21 @@ components:
             linking.deeplink.write: Generate linking deep links.
             linking.read: Read the link status of the studio's own provider accounts.
             webhook.write: Send match result webhooks to Sbarter.
+
+  parameters:
+    UserAgent:
+      name: User-Agent
+      in: header
+      required: true
+      description: >
+        Any non-empty value identifying your client. Requests without a `User-Agent` header, or
+        with an empty one, are rejected at the Sbarter network edge with `403 Forbidden` and an
+        HTML body, before they reach the token endpoint or the API. Most HTTP clients send it by
+        default; set it explicitly if your client strips default headers.
+      schema:
+        type: string
+        minLength: 1
+      example: <studio>-backend/1.0
 
   schemas:
     InAppLinkingResultWebhook:
@@ -474,7 +508,7 @@ components:
         providerGameId:
           type: string
           description: Stable provider-side game identifier.
-          example: "real boxing 3"
+          example: "chess game"
         sessionId:
           type: string
           format: uuid
@@ -482,8 +516,8 @@ components:
           example: "123e4567-e89b-12d3-a456-426614174000"
         matchId:
           type: string
-          description: Provider-side match identifier associated with the reported result.
-          example: "real-boxing-match-abc-123"
+          description: Provider-side contest identifier associated with the reported result.
+          example: "contest-abc-123"
         status:
           $ref: '#/components/schemas/GameResultStatus'
         startedAt:
@@ -500,7 +534,7 @@ components:
           type: array
           minItems: 2
           maxItems: 2
-          description: Exactly two player result entries for the current Level 3 1v1 match flow.
+          description: Exactly two player result entries for the current 1v1 contest flow.
           items:
             $ref: '#/components/schemas/PlayerGameResult'
 

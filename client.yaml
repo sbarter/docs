@@ -225,7 +225,7 @@ components:
         providerGameId:
           type: string
           description: Stable provider-side game identifier for the session being created.
-          example: "real boxing 3"
+          example: "chess game"
         sessionId:
           type: string
           format: uuid
