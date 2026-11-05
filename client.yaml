@@ -165,7 +165,7 @@ components:
           type: string
           format: uri
           description: Sbarter callback URL that must later receive the final linking decision. The partner must call this exact URL as provided; it already contains the concrete requestId path value and should not be reconstructed manually.
-          example: "https://webhook.dev.sbarter.com/v1/linking/in-app/a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
+          example: "https://partners.dev.sbarter.com/acme/v1/linking/in-app/a2f7c8b1-7f28-4a8d-9c35-cc2b3c2b4a11"
 
     ProviderProfileRequest:
       type: object
