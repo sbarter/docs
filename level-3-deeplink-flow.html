@@ -223,7 +223,7 @@
           <ul class="rules">
             <li><strong>Client credentials.</strong> Create them in the Sbarter web portal (your studio &rarr; API credentials). The client needs the scopes <code>linking.deeplink.write</code> and <code>linking.read</code>; the token's <code>scope</code> claim shows what you hold.</li>
             <li><strong><code>providerGameId</code>.</strong> Sbarter registers each of your games against your studio with a <code>providerGameId</code>, the id you use for the game in every call. It is set by Sbarter (it is not the game name shown in the portal) - ask Sbarter for it. An id that is not registered, or registered only as your studio's default entry, is refused.</li>
-            <li><strong>Hosts.</strong> See <a href="./index.html">Servers</a> in the API reference: API <code>webhook.&lt;env&gt;.sbarter.com</code>, tokens from the Sbarter identity provider of the same environment. Credentials of one environment are refused by the others.</li>
+            <li><strong>Hosts.</strong> See <a href="./index.html">Servers</a> in the API reference: API <code>partners.&lt;env&gt;.sbarter.com/&lt;slug&gt;</code> (your slug is given by Sbarter), tokens from the Sbarter identity provider of the same environment. Credentials of one environment are refused by the others.</li>
           </ul>
         </article>
 

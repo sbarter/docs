@@ -27,17 +27,25 @@ info:
       not the game name shown in the portal; ask Sbarter for it. An id that is not registered (or
       registered only as your studio's default entry) is refused.
 
+    - Your API host: Sbarter gives you a slug (e.g. `acme`). Every call in this document goes to
+      `https://partners.<env>.sbarter.com/<slug>` - the paths below are appended to it, e.g.
+      `https://partners.sbarter.com/acme/v1/linking/status`.
+
     - For Sbarter -> studio calls (see the VGP API), give Sbarter your base URL and an API key
-      per environment.
+      per environment. Until your API is ready, Sbarter can point your studio at its sandbox, which
+      plays your side so you can test this API end to end.
 
 
     **Environments** - each has its own credentials; a token from one is refused by the others.
 
     | Environment | API | Token URL |
     |---|---|---|
-    | Development | `https://webhook.dev.sbarter.com` | `https://keycloak.dev.sbarter.com/realms/studio_investor/protocol/openid-connect/token` |
-    | Staging | `https://webhook.test.sbarter.com` | `https://keycloak.test.sbarter.com/realms/studio_investor/protocol/openid-connect/token` |
-    | Production | `https://webhook.sbarter.com` | `https://id.sbarter.com/realms/studio_investor/protocol/openid-connect/token` |
+    | Development | `https://partners.dev.sbarter.com/<slug>` | `https://keycloak.dev.sbarter.com/realms/studio_investor/protocol/openid-connect/token` |
+    | Staging | `https://partners.test.sbarter.com/<slug>` | `https://keycloak.test.sbarter.com/realms/studio_investor/protocol/openid-connect/token` |
+    | Production | `https://partners.sbarter.com/<slug>` | `https://id.sbarter.com/realms/studio_investor/protocol/openid-connect/token` |
+
+    The quickest check that everything is in place - credentials, studio, slug, gateway - is
+    `GET /v1/auth/check`: `204` means the next calls will be accepted.
 
 
     **Headers on every call**
@@ -65,24 +73,24 @@ info:
     assuming the full set.
 
 servers:
-  - url: https://partners.{environment}sbarter.com/{studio}
-    description: >-
-      Your studio's own partner host. Studios onboarded with a dedicated integration call every
-      endpoint below under their studio path; use the path Sbarter gave you.
-    variables:
-      environment:
-        default: "dev."
-        enum: ["dev.", "test.", ""]
-        description: "dev., test., or empty for production"
-      studio:
-        default: "your-studio"
-        description: The studio path Sbarter assigned you
-  - url: https://webhook.sbarter.com
+  - url: https://partners.sbarter.com/{slug}
     description: Sbarter API - production
-  - url: https://webhook.test.sbarter.com
+    variables:
+      slug:
+        default: your-slug
+        description: The slug Sbarter assigned to your studio.
+  - url: https://partners.test.sbarter.com/{slug}
     description: Sbarter API - staging
-  - url: https://webhook.dev.sbarter.com
+    variables:
+      slug:
+        default: your-slug
+        description: The slug Sbarter assigned to your studio.
+  - url: https://partners.dev.sbarter.com/{slug}
     description: Sbarter API - development
+    variables:
+      slug:
+        default: your-slug
+        description: The slug Sbarter assigned to your studio.
   - url: https://id.sbarter.com
     description: Sbarter Identity Provider - production
   - url: https://keycloak.test.sbarter.com
@@ -110,20 +118,27 @@ paths:
       summary: Check your credentials end to end
       operationId: checkStudioAuth
       description: >
-        Available on your partner host only. Answers 204 when the token is valid and was issued to
-        your studio, so you can verify your client credentials before any business endpoint is
-        live. A token issued to another studio is answered 403.
+        Answers 204 once the token is valid, belongs to the studio behind your slug and the gateway
+        routes your slug. Call it once after onboarding and after rotating credentials; it changes
+        nothing.
+
 
         Authorization: Bearer <access_token>
       security:
         - OAuth2ClientCredentials: []
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
       responses:
         "204":
-          description: The token is valid and belongs to your studio
+          description: Credentials, studio and slug are all in place
         "401":
-          description: Missing or invalid OAuth2 token
+          description: Token missing, expired or not from the studio_investor realm of this environment
         "403":
-          description: The token belongs to another studio
+          description: The token belongs to another studio, or the User-Agent header is missing (HTML body from the network edge)
+        "404":
+          description: Unknown slug
+        "503":
+          description: Your studio is not onboarded on this environment yet
 
   /v1/linking/in-app/{requestId}:
     post:
