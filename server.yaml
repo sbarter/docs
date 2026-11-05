@@ -17,15 +17,52 @@ info:
     It also documents the OAuth2 Client Credentials token endpoint (Keycloak).
 
 
+    **Before the first call**
+
+    - Client credentials: create them in the Sbarter web portal (your studio -> API credentials).
+      The secret is shown once. Every token issued to that client is pinned to your studio.
+
+    - `providerGameId`: Sbarter registers each of your games against your studio with a
+      `providerGameId` - the id you send for that game in every call. It is set by Sbarter, it is
+      not the game name shown in the portal; ask Sbarter for it. An id that is not registered (or
+      registered only as your studio's default entry) is refused.
+
+    - For Sbarter -> studio calls (see the VGP API), give Sbarter your base URL and an API key
+      per environment.
+
+
+    **Environments** - each has its own credentials; a token from one is refused by the others.
+
+    | Environment | API | Token URL |
+    |---|---|---|
+    | Development | `https://webhook.dev.sbarter.com` | `https://keycloak.dev.sbarter.com/realms/studio_investor/protocol/openid-connect/token` |
+    | Staging | `https://webhook.test.sbarter.com` | `https://keycloak.test.sbarter.com/realms/studio_investor/protocol/openid-connect/token` |
+    | Production | `https://webhook.sbarter.com` | `https://id.sbarter.com/realms/studio_investor/protocol/openid-connect/token` |
+
+
+    **Headers on every call**
+
+    | Header | Value |
+    |---|---|
+    | `Authorization` | `Bearer <access_token>` (client-credentials grant) |
+    | `Content-Type` | `application/json` (`application/x-www-form-urlencoded` on the token endpoint) |
+    | `User-Agent` | any non-empty value; without it the network edge answers 403 with an HTML body |
+
+
+    **Errors** - JSON with a fixed `error` text per status; rely on the status and `errorCode`, not
+    on the text. Business refusals use status 467 and add `errorCode`, e.g.
+    `{"error": "Some conditions were not met", "errorCode": "GI0023", "additionalData": {}}`.
+    GI0021 (deeplink already used) and GI0022 (deeplink expired or unknown) are returned to the
+    player who taps a link, never to the Game Studio.
+
+
+    Step-by-step flows with sequence diagrams: *In-App Linking Flow* and *Deep Link Flow* (links
+    at the top of this page).
+
+
     Every grant listed under OAuth2ClientCredentials is issued separately. A studio may hold one
     without the others, so check the `scope` claim of the token you were issued rather than
     assuming the full set.
-
-
-    Errors. Besides the statuses listed per endpoint, a request that breaks a business rule is
-    answered `467` with a body of `{"error": "...", "errorCode": "GI00xx", "additionalData": {...}}`;
-    branch on `errorCode`, not on the message. GI0021 (deeplink already used) and GI0022 (deeplink
-    expired or unknown) are returned to the player who taps a link, never to the Game Studio.
 
 servers:
   - url: https://partners.{environment}sbarter.com/{studio}
@@ -40,10 +77,18 @@ servers:
       studio:
         default: "your-studio"
         description: The studio path Sbarter assigned you
+  - url: https://webhook.sbarter.com
+    description: Sbarter API - production
+  - url: https://webhook.test.sbarter.com
+    description: Sbarter API - staging
   - url: https://webhook.dev.sbarter.com
-    description: Sbarter API
+    description: Sbarter API - development
+  - url: https://id.sbarter.com
+    description: Sbarter Identity Provider - production
+  - url: https://keycloak.test.sbarter.com
+    description: Sbarter Identity Provider - staging
   - url: https://keycloak.dev.sbarter.com
-    description: Sbarter Identity Provider (Keycloak)
+    description: Sbarter Identity Provider - development
 
 tags:
   - name: VGP - In App Confirmation
@@ -104,6 +149,7 @@ paths:
           schema:
             type: string
             format: uuid
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -118,9 +164,17 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: Forbidden
+          description: >-
+            The token is missing the linking.write scope, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
         "409":
           description: Request already processed (idempotency)
+        "467":
+          description: >-
+            Business rule refusal; the reason is the errorCode in the response body.
+            GI0023 - an accepted decision for a providerUserId that is already linked to another
+            Sbarter user. A provider account can be linked to one Sbarter user at a time, so the
+            request is recorded as rejected and the player's pending link is cleared. The account
+            becomes free again once that player removes the game from their Sbarter library.
         "500":
           description: Internal server error
 
@@ -148,20 +202,37 @@ paths:
         a link for another studio's account.
 
 
-        The link is single-use. Its deadline is capped by Sbarter, so an expiresAt further out
-        than the cap is stored at the cap rather than refused - read expiresAt in the response
-        rather than assuming the requested value was kept.
+        The link is single-use and lives at most **15 minutes**. A later expiresAt is stored at
+        that cap rather than refused, and an absent one defaults to it - read expiresAt in the
+        response rather than assuming the requested value was kept. Mint the link when the player
+        asks for it, not in advance.
+
+
+        What the player sees: the deepLink is an https link
+        (`https://connect.sbarter.com/linking/confirm/dl_...` in production,
+        `connect.test.sbarter.com` on staging). It opens the Sbarter app when installed; otherwise a
+        Sbarter page with your game and the store links, and the app picks the link up on first
+        start after install. The app redeems it as soon as the player is signed in (login or
+        registration first if needed) and shows "Game connected" with providerDisplayName. A
+        refused redemption (expired, already used, account linked meanwhile, game already in the
+        player's library, player not eligible) leaves the link unused and nothing linked - the
+        studio sees it as `linked: false`. Full walkthrough: *Deep Link Flow* page.
 
 
         An optional destination can send the player to a Sbarter tournament or challenge after
         they confirm the link. Sbarter checks that the target exists, belongs to the resolved
-        game, and is open for participation. Without it, the normal post-linking journey applies.
+        game, and is open for participation (a challenge waiting for an opponent and not expired;
+        a tournament still open for registration). Without it, the normal post-linking journey
+        applies. The resourceId is a Sbarter id; there is no client-credentials endpoint to list
+        challenges or tournaments yet, so take it from the Sbarter web portal or ask Sbarter.
 
 
         Authorization: Bearer <access_token>
       security:
         - OAuth2ClientCredentials:
             - linking.deeplink.write
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -184,21 +255,50 @@ paths:
                 $ref: '#/components/schemas/DeepLinkGenerateResponse'
               example:
                 linkId: "dl_7f3k9q2mwz8c4n6b"
-                deepLink: "https://sbarter.kinsta.cloud/linking/confirm/dl_7f3k9q2mwz8c4n6b"
+                deepLink: "https://connect.sbarter.com/linking/confirm/dl_7f3k9q2mwz8c4n6b"
                 expiresAt: "2025-12-12T13:00:00Z"
         "400":
           description: >-
             Invalid payload (including an unsupported destination type or invalid resourceId),
             an expiresAt already in the past, or a providerGameId that resolves only to the
             studio's default partner row and so does not identify one game
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Validation failed, check additional_fields for details"
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: Token is missing the linking.deeplink.write scope
+          description: >-
+            The token is missing the linking.deeplink.write scope, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
         "404":
           description: >-
             No game of this studio matches providerGameId, or the optional destination is missing,
             belongs to another game, has expired, or is not open for participation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Not Found"
+        "467":
+          description: >-
+            Business rule refusal; the reason is the errorCode in the response body.
+            GI0023 - providerUserId is already linked to a Sbarter user, so no link is minted.
+            A provider account can be linked to one Sbarter user at a time; check it first with
+            `POST /v1/linking/status`. Several links for one account that is not linked yet are
+            allowed, but once one of them is redeemed the others are refused with the same code
+            and stay unused.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessErrorResponse'
+              example:
+                error: "Some conditions were not met"
+                errorCode: "GI0023"
+                additionalData: {}
         "500":
           description: Internal server error
 
@@ -232,6 +332,8 @@ paths:
       security:
         - OAuth2ClientCredentials:
             - linking.read
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -266,7 +368,8 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: Token is missing the linking.read scope
+          description: >-
+            The token is missing the linking.read scope, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
         "500":
           description: Internal server error
 
@@ -284,6 +387,8 @@ paths:
       security:
         - OAuth2ClientCredentials:
             - webhook.write
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -298,7 +403,8 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: Forbidden
+          description: >-
+            The token is missing the webhook.write scope, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
         "500":
           description: Internal server error
 
@@ -318,6 +424,8 @@ paths:
       description: >
         Issues an access token using OAuth 2.0 Client Credentials Grant.
         The returned token_type is "Bearer".
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -347,12 +455,31 @@ paths:
           description: Invalid request
         "401":
           description: Invalid client credentials
+        "403":
+          description: >-
+            Rejected at the Sbarter network edge because the User-Agent header is missing or
+            empty. The body is HTML, not JSON.
         "429":
           description: Too many requests
         "500":
           description: Internal server error
 
 components:
+  parameters:
+    UserAgent:
+      name: User-Agent
+      in: header
+      required: true
+      description: >-
+        Any non-empty value that identifies your client. Requests without a User-Agent header, or
+        with an empty one, are rejected at the Sbarter network edge with 403 Forbidden and an HTML
+        body, before they reach the token endpoint or the API. Most HTTP clients send one by
+        default; set it explicitly if yours strips default headers.
+      schema:
+        type: string
+        minLength: 1
+      example: <studio>-backend/1.0
+
   securitySchemes:
     OAuth2ClientCredentials:
       type: oauth2
@@ -369,6 +496,36 @@ components:
             webhook.write: Send match result webhooks to Sbarter.
 
   schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      description: >-
+        Error body for 400, 401, 403 (JSON ones), 404, 409 and 500. The text is fixed per status;
+        do not parse it.
+      properties:
+        error:
+          type: string
+          example: "Not Found"
+
+    BusinessErrorResponse:
+      type: object
+      required: [error, errorCode]
+      description: Error body for 467 - a business rule refused the request; errorCode says which.
+      properties:
+        error:
+          type: string
+          example: "Some conditions were not met"
+        errorCode:
+          type: string
+          description: >-
+            Machine-readable reason. GI0023 - the provider account is already linked to a Sbarter
+            player.
+          example: "GI0023"
+        additionalData:
+          type: object
+          additionalProperties: {}
+          description: Optional details for the code; may be empty.
+
     InAppLinkingResultWebhook:
       oneOf:
         - $ref: '#/components/schemas/InAppLinkingResultAcceptedWebhook'
@@ -578,9 +735,10 @@ components:
         providerGameId:
           type: string
           description: >-
-            Stable provider-side game identifier, as registered on the studio's partner
-            configuration. Resolved to a Sbarter game here, so an id that is not configured is a
-            404 rather than a link that cannot be redeemed.
+            Your id for the game, as Sbarter registered it on your studio's partner configuration
+            (set by Sbarter, not shown in the web portal; ask Sbarter). Not the game name. Resolved
+            to a Sbarter game here, so an id that is not configured is a 404 rather than a link
+            that cannot be redeemed.
           example: "some-game-id"
         providerUserId:
           type: string
@@ -600,7 +758,7 @@ components:
           type: string
           format: date-time
           description: >-
-            Requested deadline. Optional. Capped by Sbarter's own maximum and defaulted to it when
+            Requested deadline. Optional. Capped at 15 minutes from now and defaulted to that when
             absent; a value already in the past is refused with 400. Read expiresAt in the
             response to see what was actually stored.
           example: "2025-12-12T13:00:00Z"
@@ -637,7 +795,7 @@ components:
             linkId, and its form is environment-specific. In production it is an https universal
             link, which opens the Sbarter app when installed and otherwise a page that leads to
             the app store.
-          example: "https://sbarter.kinsta.cloud/linking/confirm/dl_7f3k9q2mwz8c4n6b"
+          example: "https://connect.sbarter.com/linking/confirm/dl_7f3k9q2mwz8c4n6b"
         expiresAt:
           type: string
           format: date-time
