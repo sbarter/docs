@@ -20,6 +20,8 @@ tags:
     description: Current provider profile retrieval for already-linked accounts (Sbarter -> Game Studio)
   - name: Session
     description: Session registration on Game Studio side (Sbarter -> Game Studio)
+  - name: Challenge
+    description: Challenge lifecycle notifications (Sbarter -> Game Studio)
 
 paths:
   /v1/sbarter/gamer/validate/in-app:
@@ -131,6 +133,114 @@ paths:
         "500":
           description: Internal server error
 
+  /v1/challenge/invite:
+    post:
+      tags: [Challenge]
+      summary: Challenge invite
+      operationId: sendChallengeInvite
+      description: >
+        Sbarter tells the Game Studio which linked players were invited to a challenge in its game.
+        A notification: nothing is expected back beyond a 2xx, and the Game Studio decides how to
+        surface it in the game.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChallengeNotificationRequest'
+      responses:
+        "2XX":
+          description: Notification accepted
+        "400":
+          description: Invalid request
+        "401":
+          description: Missing or invalid API key
+        "500":
+          description: Internal server error
+
+  /v1/challenge/acceptance:
+    post:
+      tags: [Challenge]
+      summary: Challenge accepted
+      operationId: sendChallengeAcceptance
+      description: >
+        Sbarter tells the Game Studio a challenge was accepted. Players are ordered creator first, opponent second.
+        A notification: nothing is expected back beyond a 2xx, and the Game Studio decides how to
+        surface it in the game.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChallengeNotificationRequest'
+      responses:
+        "2XX":
+          description: Notification accepted
+        "400":
+          description: Invalid request
+        "401":
+          description: Missing or invalid API key
+        "500":
+          description: Internal server error
+
+  /v1/challenge/await-opponent:
+    post:
+      tags: [Challenge]
+      summary: Waiting for the opponent
+      operationId: sendChallengeAwaitOpponent
+      description: >
+        Sbarter tells the Game Studio a player is ready and waiting for the other participant. Players are ordered waiting player first, opponent second.
+        A notification: nothing is expected back beyond a 2xx, and the Game Studio decides how to
+        surface it in the game.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChallengeNotificationRequest'
+      responses:
+        "2XX":
+          description: Notification accepted
+        "400":
+          description: Invalid request
+        "401":
+          description: Missing or invalid API key
+        "500":
+          description: Internal server error
+
+  /v1/challenge/completion:
+    post:
+      tags: [Challenge]
+      summary: Challenge completed
+      operationId: sendChallengeCompletion
+      description: >
+        Sbarter tells the Game Studio a challenge has finished.
+        A notification: nothing is expected back beyond a 2xx, and the Game Studio decides how to
+        surface it in the game.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChallengeCompletionRequest'
+      responses:
+        "2XX":
+          description: Notification accepted
+        "400":
+          description: Invalid request
+        "401":
+          description: Missing or invalid API key
+        "500":
+          description: Internal server error
+
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -140,6 +250,43 @@ components:
       description: Partner API key issued by the Game Studio for Sbarter to call Game Studio endpoints.
 
   schemas:
+    ChallengePlayer:
+      type: object
+      required: [internalId, providerUserId]
+      properties:
+        internalId:
+          type: string
+          description: Sbarter player identifier.
+        providerUserId:
+          type: string
+          description: The player's linked account identifier in the Game Studio.
+
+    ChallengeNotificationRequest:
+      type: object
+      required: [challengeId, providerGameId, players]
+      properties:
+        challengeId:
+          type: string
+          description: Sbarter challenge identifier.
+        providerGameId:
+          type: string
+          description: Stable provider-side game identifier.
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChallengePlayer'
+
+    ChallengeCompletionRequest:
+      type: object
+      required: [challengeId, providerGameId]
+      properties:
+        challengeId:
+          type: string
+          description: Sbarter challenge identifier.
+        providerGameId:
+          type: string
+          description: Stable provider-side game identifier.
+
     InAppConfirmationRequest:
       type: object
       required: [internalId, providerGameId, providerUserId, expiresAt, webhookUrl]

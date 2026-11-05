@@ -60,6 +60,8 @@ info:
     **Errors** - JSON with a fixed `error` text per status; rely on the status and `errorCode`, not
     on the text. Business refusals use status 467 and add `errorCode`, e.g.
     `{"error": "Some conditions were not met", "errorCode": "GI0023", "additionalData": {}}`.
+    GI0021 (deeplink already used) and GI0022 (deeplink expired or unknown) are returned to the
+    player who taps a link, never to the Game Studio.
 
 
     Step-by-step flows with sequence diagrams: *In-App Linking Flow* and *Deep Link Flow* (links
