@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>How Level 3 Works</title>
+    <link
+      href="https://fonts.googleapis.com/css?family=Montserrat:400,700|Roboto:300,400,700"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --panel: #ffffff;
+        --text: #1f2937;
+        --muted: #5b6472;
+        --border: #d8dee8;
+        --accent: #32329f;
+        --accent-soft: #eef0ff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #eef2ff 0%, var(--bg) 28%);
+        color: var(--text);
+        font-family: "Roboto", sans-serif;
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 20px 56px;
+      }
+
+      .hero {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 28px;
+        box-shadow: 0 18px 50px rgba(50, 50, 159, 0.08);
+      }
+
+      .eyebrow {
+        display: inline-block;
+        margin: 0 0 10px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      h1 {
+        font-size: clamp(1.9rem, 4vw, 3rem);
+        line-height: 1.05;
+      }
+
+      h2 {
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+      }
+
+      p {
+        margin: 12px 0 0;
+        line-height: 1.65;
+        color: var(--muted);
+      }
+
+      .meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+        margin-top: 22px;
+      }
+
+      .meta-card,
+      .section {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+      }
+
+      .meta-card {
+        padding: 16px 18px;
+      }
+
+      .meta-card strong {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--text);
+      }
+
+      .content {
+        margin-top: 22px;
+        display: grid;
+        gap: 18px;
+      }
+
+      .section {
+        padding: 22px;
+        overflow: hidden;
+      }
+
+      .section p:first-of-type {
+        margin-top: 0;
+      }
+
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 18px;
+        color: var(--accent);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .back-link:hover {
+        text-decoration: underline;
+      }
+
+      .mermaid {
+        margin-top: 14px;
+        padding: 8px 0 0;
+        overflow-x: auto;
+      }
+
+      code {
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: #f3f4f6;
+        color: #111827;
+        font-size: 0.95em;
+      }
+
+      .plain-box {
+        margin-top: 18px;
+        padding: 16px 18px;
+        border-radius: 16px;
+        background: #f8fafc;
+        border: 1px solid var(--border);
+      }
+
+      .plain-box strong {
+        color: var(--text);
+      }
+
+      ul.rules {
+        margin: 14px 0 0;
+        padding-left: 20px;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      ul.rules li + li {
+        margin-top: 8px;
+      }
+
+      @media (max-width: 640px) {
+        .hero,
+        .section {
+          padding: 20px;
+          border-radius: 16px;
+        }
+
+        .page {
+          padding: 20px 14px 40px;
+        }
+      }
+      table.codes { width: 100%; border-collapse: collapse; margin: 12px 0 4px; font-size: 14px; }
+      table.codes th, table.codes td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+      table.codes th { background: #f8fafc; }
+    </style>
+  </head>
+  <body>
+    <style>
+      .diagram { margin: 14px 0 4px; }
+      .diagram img { width: 100%; height: auto; display: block; }
+    </style>
+    <main class="page">
+      <a class="back-link" href="./index.html">&larr; Back To API Docs</a>
+
+      <section class="hero">
+        <span class="eyebrow">Level 3</span>
+        <h1>How Level 3 Works</h1>
+        <p>
+          A level 3 game is integrated with Sbarter by its studio: players link their game account to
+          Sbarter once, Sbarter tells the studio about each challenge match, and the studio's server
+          reports who won. Sbarter settles the challenge and pays out automatically.
+        </p>
+
+        <div class="plain-box">
+          <strong>Two directions:</strong>
+          the <strong>Sbarter API</strong> is what your backend calls on Sbarter (OAuth2 client credentials);
+          the <strong>VGP API</strong> is what your backend implements and Sbarter calls (<code>X-API-Key</code>).
+          Both are in the API reference - switch between them in the selector.
+        </div>
+
+        <div class="meta">
+          <div class="meta-card">
+            <strong>Sbarter API host</strong>
+            <p><code>partners.&lt;env&gt;.sbarter.com/&lt;slug&gt;</code></p>
+          </div>
+          <div class="meta-card">
+            <strong>VGP API host</strong>
+            <p>your base URL, given to Sbarter per environment</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="content">
+        <article class="section">
+          <h2>Architecture</h2>
+          <div class="diagram"><img src="assets/level-3-architecture.svg" alt="How a studio and Sbarter talk"></div>
+          <ul class="rules">
+            <li><strong>One host per studio.</strong> Your backend calls <code>partners.&lt;env&gt;.sbarter.com/&lt;slug&gt;</code>; the slug is given by Sbarter at onboarding.</li>
+            <li><strong>An adapter on Sbarter's side.</strong> It checks your token (it carries your studio id), calls your API with the key you issued, and builds the callback URLs Sbarter sends you.</li>
+            <li><strong>Your own API.</strong> If your studio already has an API for this, Sbarter can map to it in your adapter instead of you implementing the VGP API.</li>
+          </ul>
+        </article>
+
+        <article class="section">
+          <h2>Onboarding</h2>
+          <ul class="rules">
+            <li><strong>Sbarter API credentials.</strong> Sbarter web portal &rarr; your studio &rarr; API credentials: create a client, keep the secret (shown once). Scopes: <code>linking.write</code>, <code>linking.deeplink.write</code>, <code>linking.read</code>, <code>webhook.write</code>.</li>
+            <li><strong>VGP API credentials.</strong> Send Sbarter your base URL and an API key per environment.</li>
+            <li><strong><code>providerGameId</code>.</strong> Sbarter registers each of your games with the id you use for it in every call.</li>
+            <li><strong>Smoke test.</strong> Get a token and call <code>GET /v1/auth/check</code>: <code>204</code> means token, studio and gateway all work.</li>
+          </ul>
+        </article>
+
+        <article class="section">
+          <h2>Sbarter API - you call Sbarter</h2>
+          <table class="codes">
+            <tr><th>Endpoint</th><th>Scope</th><th>What for</th></tr>
+            <tr><td><code>GET /v1/auth/check</code></td><td>any</td><td>Check credentials end to end (<code>204</code>)</td></tr>
+            <tr><td><code>POST /v1/linking/in-app/{requestId}</code></td><td><code>linking.write</code></td><td>Decision on an in-app linking request - call the <code>webhookUrl</code> Sbarter sent</td></tr>
+            <tr><td><code>POST /v1/linking/deeplink/generate</code></td><td><code>linking.deeplink.write</code></td><td>Single-use link that connects the player's game account</td></tr>
+            <tr><td><code>POST /v1/linking/status</code></td><td><code>linking.read</code></td><td>Is this game account linked to a Sbarter player</td></tr>
+            <tr><td><code>POST /v1/webhooks/game-studio/match-result</code></td><td><code>webhook.write</code></td><td>Result of a match Sbarter registered - call the <code>webhookUrl</code> Sbarter sent</td></tr>
+          </table>
+          <p>Every call carries <code>Authorization: Bearer &lt;token&gt;</code>, <code>Content-Type: application/json</code> on POST and a non-empty <code>User-Agent</code>.</p>
+        </article>
+
+        <article class="section">
+          <h2>VGP API - Sbarter calls you</h2>
+          <table class="codes">
+            <tr><th>Endpoint</th><th>When</th><th>Answer</th></tr>
+            <tr><td><code>POST /v1/sbarter/gamer/validate/in-app</code></td><td>A player links their game account from the Sbarter app</td><td><code>202</code>, decision later on <code>webhookUrl</code></td></tr>
+            <tr><td><code>POST /v1/sbarter/gamer/profile</code></td><td>Sbarter refreshes a linked player's profile</td><td>profile snapshot or <code>404</code></td></tr>
+            <tr><td><code>POST /v1/session</code></td><td>Both players of a challenge are ready</td><td><code>201</code>; same payload again <code>200</code>; other payload, same <code>sessionId</code> <code>409</code></td></tr>
+            <tr><td><code>POST /v1/challenge/invite</code>, <code>/acceptance</code>, <code>/await-opponent</code>, <code>/completion</code></td><td>Challenge lifecycle, informational</td><td>any 2xx</td></tr>
+          </table>
+          <p>Every call is a <code>POST</code> with <code>Content-Type: application/json</code> and <code>X-API-Key</code>.</p>
+        </article>
+
+        <article class="section">
+          <h2>Linking a game account</h2>
+          <ul class="rules">
+            <li><strong>From the Sbarter app:</strong> <a href="./level-3-in-app-linking-flow.html">In-App Linking Flow</a> - the player enters their game id in Sbarter, you confirm it inside your game.</li>
+            <li><strong>From your game:</strong> <a href="./level-3-deeplink-flow.html">Deep Link Flow</a> - your game mints a one-time link, the player opens it in Sbarter.</li>
+            <li>One game account can be linked to one Sbarter player only (<code>GI0023</code>).</li>
+          </ul>
+        </article>
+
+        <article class="section">
+          <h2>A challenge match</h2>
+          <div class="diagram"><img src="assets/level-3-match-flow.svg" alt="A challenge match"></div>
+          <ul class="rules">
+            <li><strong>Register.</strong> When both players are ready Sbarter calls <code>POST /v1/session</code> with <code>sessionId</code>, both players (your <code>providerUserId</code> + Sbarter <code>internalId</code>), the rules, <code>expiresAt</code> and a <code>webhookUrl</code>.</li>
+            <li><strong>Report.</strong> When the match ends, call the <code>webhookUrl</code> with <code>sessionId</code>, your <code>matchId</code>, <code>status</code> (<code>win</code>, <code>draw</code>, <code>failed</code>, <code>voided</code>) and exactly two players with their outcome.</li>
+            <li><strong>Retries are safe.</strong> <code>sessionId</code> + <code>matchId</code> is the idempotency key: a repeated result is recognised, never applied twice.</li>
+          </ul>
+        </article>
+
+        <article class="section">
+          <h2>Errors</h2>
+          <table class="codes">
+            <tr><th>Status</th><th>Meaning</th></tr>
+            <tr><td>400</td><td>The payload does not match the schema</td></tr>
+            <tr><td>401</td><td>Token missing, expired or from another environment</td></tr>
+            <tr><td>403</td><td>Token of another studio, missing scope, or missing <code>User-Agent</code> (HTML body)</td></tr>
+            <tr><td>404</td><td>Unknown <code>providerGameId</code>, request or session</td></tr>
+            <tr><td>409</td><td>Already processed</td></tr>
+            <tr><td>467</td><td>Business rule refusal - see <code>errorCode</code>: <code>GI0021</code> link already used, <code>GI0022</code> link expired or unknown, <code>GI0023</code> account already linked to another player</td></tr>
+            <tr><td>503</td><td>Temporarily unavailable - retry later</td></tr>
+          </table>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
