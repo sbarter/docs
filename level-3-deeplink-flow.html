@@ -300,7 +300,7 @@ sequenceDiagram
             <tr><td>Player already has this game in their Sbarter library</td><td><code>GI0006</code></td><td>Remove it in Sbarter, then link again</td></tr>
             <tr><td>Player not verified, banned, or excluded by country / age rules</td><td><code>GI0012</code>, <code>GI0007</code>, <code>GI0008</code>-<code>GI0010</code></td><td>Player action in Sbarter</td></tr>
           </table>
-          <p>At generation time the same account check runs: a <code>providerUserId</code> that is already linked is refused with <code>467 GI0023</code> and no link is minted.</p>
+          <p>At generation time the same account check runs: a <code>providerUserId</code> that is already linked is refused with <code>467 GI0023</code> and no link is minted. The one exception is a <code>challenge</code> destination, which needs the account to be linked already (see Destination).</p>
         </article>
 
         <article class="section">
@@ -311,9 +311,10 @@ sequenceDiagram
             <tr><th>Status</th><th>generate</th><th>status</th></tr>
             <tr><td>400</td><td>Body does not match the schema, <code>expiresAt</code> in the past, unsupported <code>destination.type</code>, or a <code>providerGameId</code> registered only as the studio default</td><td>Body does not match the schema</td></tr>
             <tr><td>401</td><td colspan="2">Token missing, expired or from another environment</td></tr>
-            <tr><td>403</td><td>Token without <code>linking.deeplink.write</code>, or missing <code>User-Agent</code> (HTML body)</td><td>Token without <code>linking.read</code>, or missing <code>User-Agent</code></td></tr>
+            <tr><td>403</td><td>Token without <code>linking.deeplink.write</code>, a <code>challenge</code> destination for an account that is not linked or for a private challenge the player was not invited to, or missing <code>User-Agent</code> (HTML body)</td><td>Token without <code>linking.read</code>, or missing <code>User-Agent</code></td></tr>
             <tr><td>404</td><td>No game of yours with this <code>providerGameId</code>, or the destination is not available</td><td>Never - unknown accounts answer <code>linked: false</code></td></tr>
-            <tr><td>467</td><td><code>GI0023</code> account already linked</td><td>-</td></tr>
+            <tr><td>467</td><td><code>GI0023</code> account already linked (not for a <code>challenge</code> destination)</td><td>-</td></tr>
+            <tr><td>503</td><td colspan="2">Temporarily unavailable - retry later</td></tr>
           </table>
         </article>
 
@@ -322,8 +323,9 @@ sequenceDiagram
           <ul class="rules">
             <li><code>destination</code> is optional: <code>{ "type": "challenge" | "tournament", "resourceId": "&lt;Sbarter uuid&gt;" }</code>.</li>
             <li>A challenge must be of the same game, waiting for an opponent, and not expired. A tournament must be of the same game and still open for registration.</li>
-            <li>The <code>resourceId</code> is a Sbarter id, not one of yours. There is no client-credentials endpoint to list challenges or tournaments yet; take the id from your Sbarter web portal or ask Sbarter.</li>
-            <li>Anything that fails these checks is a <code>404</code> and no link is minted.</li>
+            <li>The <code>resourceId</code> is a Sbarter id, not one of yours. Take a challenge id from <code>GET /v1/challenges</code>; there is no client-credentials endpoint to list tournaments yet, so take a tournament id from your Sbarter web portal or ask Sbarter.</li>
+            <li>A <code>challenge</code> destination is for a player who is already linked, and a private challenge only for a player invited to it; otherwise <code>403</code>. A <code>tournament</code> destination also works for a player who is not linked yet.</li>
+            <li>Anything that fails the other checks is a <code>404</code> and no link is minted.</li>
           </ul>
         </article>
       </section>

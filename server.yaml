@@ -13,6 +13,12 @@ info:
 
     - Match result webhooks
 
+    - The studio's games and their challenge settings
+
+    - The studio's active challenges
+
+    - Challenge creation deep link generation
+
 
     It also documents the OAuth2 Client Credentials token endpoint (Keycloak).
 
@@ -61,11 +67,31 @@ info:
     on the text. Business refusals use status 467 and add `errorCode`, e.g.
     `{"error": "Some conditions were not met", "errorCode": "GI0023", "additionalData": {}}`.
     GI0021 (deeplink already used) and GI0022 (deeplink expired or unknown) are returned to the
-    player who taps a link, never to the Game Studio.
+    player who taps a link, never to the Game Studio. `503` means Sbarter is temporarily
+    unavailable for your studio (not onboarded on this environment yet, or a Sbarter service is
+    down or too slow); retry it later.
+
+
+    **Retries** - retry `503` and network errors with a backoff; do not retry `400`, `401`, `403`,
+    `404` or `467` without changing the request.
+
+    | Call | Safe to retry? |
+    |---|---|
+    | `POST /v1/webhooks/game-studio/match-result` | Yes - `sessionId` + `matchId` is the key; a repeat is recognised, not applied twice |
+    | `POST /v1/linking/in-app/{requestId}` | Yes - a request is decided once; a repeat of a finished request answers `409` |
+    | `POST /v1/linking/deeplink/generate`, `POST /v1/challenges/deeplink/generate` | Each call mints a new link; retry only if you did not get one |
+    | `GET` endpoints, `POST /v1/linking/status` | Yes - they change nothing |
+
+
+    **Games, settings and challenges** - `GET /v1/games`, `GET /v1/games/{gameUUID}/settings`,
+    `GET /v1/challenges` and `POST /v1/challenges/deeplink/generate` are being enabled studio by
+    studio; ask Sbarter whether they are live for your slug. `GET /v1/games` returns Sbarter's own
+    id for each of your games (`gameUUID`), which the settings and challenge endpoints use; it is
+    not your `providerGameId`.
 
 
     Step-by-step flows with sequence diagrams: *In-App Linking Flow* and *Deep Link Flow* (links
-    at the top of this page).
+    at the top of this page); challenge creation from the game is on *How Level 3 Works*.
 
 
     Every grant listed under OAuth2ClientCredentials is issued separately. A studio may hold one
@@ -105,6 +131,10 @@ tags:
     description: Game Studio -> Sbarter deep link generation (opens Sbarter mobile app)
   - name: VGP - Link Status
     description: Game Studio -> Sbarter lookup of whether one of its own accounts is linked
+  - name: VGP - Games
+    description: Game Studio -> Sbarter lookup of its own games and their challenge settings
+  - name: VGP - Challenges
+    description: Game Studio -> Sbarter lookup of the active challenges in its games
   - name: Webhook
     description: Game Studio -> Sbarter webhook endpoints (game results)
   - name: OAuth 2.0 Client Credentials
@@ -181,6 +211,8 @@ paths:
         "403":
           description: >-
             The token is missing the linking.write scope, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
+        "404":
+          description: No linking request with this requestId for your studio
         "409":
           description: Request already processed (idempotency)
         "467":
@@ -192,6 +224,8 @@ paths:
             becomes free again once that player removes the game from their Sbarter library.
         "500":
           description: Internal server error
+        "503":
+          description: Temporarily unavailable - retry later
 
 
   /v1/linking/deeplink/generate:
@@ -238,8 +272,15 @@ paths:
         they confirm the link. Sbarter checks that the target exists, belongs to the resolved
         game, and is open for participation (a challenge waiting for an opponent and not expired;
         a tournament still open for registration). Without it, the normal post-linking journey
-        applies. The resourceId is a Sbarter id; there is no client-credentials endpoint to list
-        challenges or tournaments yet, so take it from the Sbarter web portal or ask Sbarter.
+        applies. The resourceId is a Sbarter id: take a challenge id from `GET /v1/challenges`;
+        there is no client-credentials endpoint to list tournaments yet, so take a tournament id
+        from the Sbarter web portal or ask Sbarter.
+
+
+        A `challenge` destination is for a player who is **already linked**: it opens that
+        challenge for them, so the account must be linked first (otherwise 403). A private
+        challenge can only be opened for a player who was invited to it (otherwise 403). A
+        `tournament` destination works for a player who is not linked yet.
 
 
         Authorization: Bearer <access_token>
@@ -287,7 +328,10 @@ paths:
           description: Missing or invalid OAuth2 token
         "403":
           description: >-
-            The token is missing the linking.deeplink.write scope, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
+            The token is missing the linking.deeplink.write scope; a challenge destination for an
+            account that is not linked, or for a private challenge the player was not invited to;
+            or the User-Agent header is missing or empty (rejected at the network edge with an HTML
+            body)
         "404":
           description: >-
             No game of this studio matches providerGameId, or the optional destination is missing,
@@ -301,7 +345,8 @@ paths:
         "467":
           description: >-
             Business rule refusal; the reason is the errorCode in the response body.
-            GI0023 - providerUserId is already linked to a Sbarter user, so no link is minted.
+            GI0023 - providerUserId is already linked to a Sbarter user, so no link is minted
+            (except with a `challenge` destination, which needs a linked account).
             A provider account can be linked to one Sbarter user at a time; check it first with
             `POST /v1/linking/status`. Several links for one account that is not linked yet are
             allowed, but once one of them is redeemed the others are refused with the same code
@@ -316,6 +361,108 @@ paths:
                 additionalData: {}
         "500":
           description: Internal server error
+        "503":
+          description: Temporarily unavailable - retry later
+
+  /v1/challenges/deeplink/generate:
+    post:
+      tags:
+        - VGP - DeepLink
+      summary: Mint a deep link that opens challenge creation, prefilled
+      operationId: generateChallengeDeepLink
+      description: >
+        Called from inside the studio's own game when a player wants to start a Sbarter challenge
+        from there. The player picks the format (one of the game's challenge settings), public or
+        private, the pledge and how long the challenge stays open; the studio passes those here
+        and hands the returned deepLink to the player. Opening it in the Sbarter app shows
+        challenge creation with those values filled in; the player confirms it there. From then
+        on it is the normal challenge match flow.
+
+
+        The link is minted for one of the studio's accounts the same way as
+        `POST /v1/linking/deeplink/generate` - the same assertion, the same single use, the same
+        **15 minute** cap on expiresAt and the same GI0023 refusal - and the player links the
+        account when they open it. There is no callback to the studio.
+
+
+        Take gameSettingsId from `GET /v1/games/{gameUUID}/settings` and keep pledge and
+        availability within that setting's limits (`pledge.min`..`pledge.max`,
+        `challengeAvailableFor`). pledge is a non-negative decimal string with at most six
+        fractional digits; availability is a non-negative integer string, in minutes.
+
+
+        Authorization: Bearer <access_token>
+      security:
+        - OAuth2ClientCredentials:
+            - linking.deeplink.write
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChallengeDeepLinkGenerateRequest'
+            example:
+              providerGameId: "some-game-id"
+              providerUserId: "user123456"
+              providerDisplayName: "DragonSlayer42"
+              gameSettingsId: "00000000-0000-0000-0000-000000000201"
+              type: public
+              pledge: "10.5"
+              availability: "60"
+      responses:
+        "201":
+          description: Link minted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeepLinkGenerateResponse'
+              example:
+                linkId: "dl_7f3k9q2mwz8c4n6b"
+                deepLink: "https://connect.sbarter.com/linking/confirm/dl_7f3k9q2mwz8c4n6b"
+                expiresAt: "2025-12-12T13:00:00Z"
+        "400":
+          description: >-
+            Invalid payload (missing field, unsupported type, pledge or availability in a wrong
+            format), or an expiresAt already in the past
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Validation failed, check additional_fields for details"
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: >-
+            The token is missing the linking.deeplink.write scope, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
+        "404":
+          description: No game of this studio matches providerGameId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Not Found"
+        "467":
+          description: >-
+            Business rule refusal; the reason is the errorCode in the response body.
+            GI0023 - providerUserId is already linked to a Sbarter user, so no link is minted.
+            The account is free again once that player removes the game from their Sbarter
+            library.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessErrorResponse'
+              example:
+                error: "Some conditions were not met"
+                errorCode: "GI0023"
+                additionalData: {}
+        "500":
+          description: Internal server error
+        "503":
+          description: Temporarily unavailable - retry later
 
   /v1/linking/status:
     post:
@@ -387,6 +534,294 @@ paths:
             The token is missing the linking.read scope, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
         "500":
           description: Internal server error
+        "503":
+          description: Temporarily unavailable - retry later
+
+  /v1/games:
+    get:
+      tags:
+        - VGP - Games
+      summary: List the studio's games
+      operationId: listStudioGames
+      description: >
+        Returns the calling studio's games with their Sbarter id, name and status, ordered by
+        name. The studio is taken from the access token. Deleted games are never returned.
+        Without a status filter every non-deleted game is returned; repeat `status` to ask for
+        several (`?status=active&status=draft`).
+
+
+        The `id` is Sbarter's own id for the game - the `gameUUID` of
+        `GET /v1/games/{gameUUID}/settings`. It is not your `providerGameId`.
+
+
+        Authorization: Bearer <access_token>. Any valid token of the studio; no extra scope.
+      security:
+        - OAuth2ClientCredentials: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          style: form
+          explode: true
+          description: Only games in these statuses. Repeat the parameter for several.
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/GameStatus'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/UserAgent'
+      responses:
+        "200":
+          description: The studio's games
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListGamesResponse'
+              example:
+                games:
+                  - id: "00000000-0000-0000-0000-000000000301"
+                    name: "Some Game"
+                    status: active
+                pagination:
+                  page: 1
+                  perPage: 20
+                  totalCount: 1
+        "400":
+          description: Invalid page, perPage or status
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: >-
+            The token belongs to another studio, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
+        "500":
+          description: Internal server error
+        "503":
+          description: Temporarily unavailable - retry later
+
+  /v1/games/{gameUUID}/settings:
+    get:
+      tags:
+        - VGP - Games
+      summary: List the challenge settings of one of the studio's games
+      operationId: listGameSettings
+      description: >
+        Returns the challenge settings of a game: each setting is a challenge format with its
+        pledge limits and the availability periods a challenge may stay open for. Deleted
+        settings are not returned; the list is ordered by uuid.
+
+
+        The `uuid` of a setting is the gameSettingsId of
+        `POST /v1/challenges/deeplink/generate`. Settings change rarely; read them once and again
+        when your game's configuration changes, not per player.
+
+
+        Authorization: Bearer <access_token>. Any valid token of the studio; no extra scope.
+      security:
+        - OAuth2ClientCredentials: []
+      parameters:
+        - name: gameUUID
+          in: path
+          required: true
+          description: Sbarter game id, the `id` from `GET /v1/games`.
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/UserAgent'
+      responses:
+        "200":
+          description: The game's challenge settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListGameSettingsResponse'
+              example:
+                gameSettings:
+                  - uuid: "00000000-0000-0000-0000-000000000201"
+                    gameUUID: "00000000-0000-0000-0000-000000000301"
+                    name: "Best of 1"
+                    description: "One match, winner takes the pot"
+                    status: "active"
+                    challengeAvailableFor: [30, 60, 120]
+                    pledge:
+                      min: "1"
+                      max: "100"
+                pagination:
+                  page: 1
+                  perPage: 20
+                  totalCount: 1
+        "400":
+          description: Invalid page, perPage or gameUUID
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: >-
+            The token belongs to another studio, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
+        "404":
+          description: The game does not exist, is not available or belongs to another studio
+        "500":
+          description: Internal server error
+        "503":
+          description: Temporarily unavailable - retry later
+
+  /v1/challenges:
+    get:
+      tags:
+        - VGP - Challenges
+      summary: List the active challenges in the studio's games
+      operationId: listStudioChallenges
+      description: >
+        Lists the challenges in the calling studio's games that are still in play: only
+        MATCHMAKING, AWAIT_GAME, PREPARING_FOR_GAME, IN_GAME and RESOLVE_RESULTS are returned. Each
+        challenge comes with its participants. A challenge's `uuid` is what a `challenge`
+        destination of `POST /v1/linking/deeplink/generate` takes.
+
+
+        Ordered by createdAt DESC unless sortField / sortOrder say otherwise. Sorting by startAt
+        or completedAt leaves out challenges without that timestamp.
+
+
+        Pagination is by opaque cursors: pass `pagination.nextScrollID` (or `prevScrollID`) back
+        as the URL-encoded `cursor` and keep the same filters and sort while following it. Array
+        filters take comma-separated values, e.g.
+        `?limit=20&statuses=MATCHMAKING,AWAIT_GAME&types=PUBLIC`. A gamerID filter leaves out
+        participants whose outcome is LEAVE. All SBT amounts are decimal strings, to keep their
+        precision.
+
+
+        Authorization: Bearer <access_token>. Any valid token of the studio; no extra scope.
+      security:
+        - OAuth2ClientCredentials: []
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          description: Opaque cursor from a previous page (`nextScrollID` / `prevScrollID`).
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: true
+          description: Page size.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - name: gamerID
+          in: query
+          required: false
+          description: Only challenges this Sbarter player takes part in.
+          schema:
+            type: string
+            format: uuid
+        - name: challengeIDs
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+        - name: gameIDs
+          in: query
+          required: false
+          style: form
+          explode: false
+          description: Sbarter game ids, the `id` from `GET /v1/games`.
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+        - name: statuses
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ChallengeStatus'
+        - name: notInStatuses
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ChallengeStatus'
+        - name: types
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ChallengeType'
+        - name: availableFor
+          in: query
+          required: false
+          style: form
+          explode: false
+          description: Availability periods, in minutes.
+          schema:
+            type: array
+            items:
+              type: integer
+              minimum: 0
+        - name: startedFrom
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: completedTo
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: search
+          in: query
+          required: false
+          description: Challenge uuid.
+          schema:
+            type: string
+        - name: sortField
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ChallengeSortField'
+        - name: sortOrder
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/SortOrder'
+        - $ref: '#/components/parameters/UserAgent'
+      responses:
+        "200":
+          description: Challenges with their participants, and the cursors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListChallengesResponse'
+        "400":
+          description: Invalid filter, sort, limit or cursor
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: >-
+            The token belongs to another studio, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
+        "500":
+          description: Internal server error
+        "503":
+          description: Temporarily unavailable - retry later
 
   /v1/webhooks/game-studio/match-result:
     post:
@@ -420,8 +855,12 @@ paths:
         "403":
           description: >-
             The token is missing the webhook.write scope, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
+        "404":
+          description: No session with this sessionId for your studio
         "500":
           description: Internal server error
+        "503":
+          description: Temporarily unavailable - retry later
 
   /realms/studio_investor/protocol/openid-connect/token:
     post:
@@ -494,6 +933,25 @@ components:
         type: string
         minLength: 1
       example: <studio>-backend/1.0
+
+    Page:
+      name: page
+      in: query
+      required: true
+      description: Page number, from 1.
+      schema:
+        type: integer
+        minimum: 1
+
+    PerPage:
+      name: perPage
+      in: query
+      required: true
+      description: Page size.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
 
   securitySchemes:
     OAuth2ClientCredentials:
@@ -657,7 +1115,10 @@ components:
         internalId:
           type: string
           nullable: true
-          description: Sbarter internal player identifier used to map provider-side players back to the correct Sbarter user.
+          description: >-
+            Sbarter internal player identifier used to map provider-side players back to the
+            correct Sbarter user - the internalId Sbarter sent for this player in
+            `POST /v1/session`. A reported win without it is refused.
           example: "sbarter-user-12345"
         outcome:
           type: string
@@ -853,3 +1314,287 @@ components:
           format: date-time
           description: When the link was established. Present only when linked.
           example: "2025-12-12T12:45:00Z"
+
+    ChallengeDeepLinkGenerateRequest:
+      type: object
+      required: [providerGameId, providerUserId, gameSettingsId, type, pledge, availability]
+      properties:
+        providerGameId:
+          type: string
+          minLength: 1
+          description: >-
+            Your id for the game, as Sbarter registered it on your studio's partner configuration.
+            Same as in `POST /v1/linking/deeplink/generate`.
+          example: "some-game-id"
+        providerUserId:
+          type: string
+          minLength: 1
+          description: Stable provider-side account identifier of the player creating the challenge.
+          example: "user123456"
+        providerDisplayName:
+          type: string
+          description: >-
+            Human-readable provider display name, shown to the player when the link is opened.
+            Strongly recommended.
+          example: "DragonSlayer42"
+        expiresAt:
+          type: string
+          format: date-time
+          description: >-
+            Requested deadline. Optional. Capped at 15 minutes from now and defaulted to that when
+            absent; a value already in the past is refused with 400.
+          example: "2025-12-12T13:00:00Z"
+        gameSettingsId:
+          type: string
+          format: uuid
+          description: The challenge format - a `uuid` from `GET /v1/games/{gameUUID}/settings`.
+          example: "00000000-0000-0000-0000-000000000201"
+        type:
+          type: string
+          enum: [public, private]
+          description: Public challenges are open to any player; private ones only to invited players.
+          example: public
+        pledge:
+          type: string
+          pattern: '^[0-9]+(\.[0-9]{1,6})?$'
+          description: >-
+            The creator's pledge in SBT. Non-negative decimal string with at most six fractional
+            digits, within the setting's `pledge.min`..`pledge.max`.
+          example: "10.5"
+        availability:
+          type: string
+          pattern: '^[0-9]+$'
+          description: >-
+            How long the challenge stays open, in minutes. Non-negative integer string; one of the
+            setting's `challengeAvailableFor` values.
+          example: "60"
+
+    GameStatus:
+      type: string
+      enum: [active, inactive, draft]
+      description: Only active games are open to players.
+
+    StudioGame:
+      type: object
+      required: [id, name, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Sbarter game id - the gameUUID of the settings endpoint. Not your providerGameId.
+          example: "00000000-0000-0000-0000-000000000301"
+        name:
+          type: string
+          example: "Some Game"
+        status:
+          $ref: '#/components/schemas/GameStatus'
+
+    Pagination:
+      type: object
+      required: [page, perPage, totalCount]
+      properties:
+        page:
+          type: integer
+          example: 1
+        perPage:
+          type: integer
+          example: 20
+        totalCount:
+          type: integer
+          description: Number of items across all pages.
+          example: 1
+
+    ListGamesResponse:
+      type: object
+      required: [games, pagination]
+      properties:
+        games:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudioGame'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    GameSettings:
+      type: object
+      required: [uuid, gameUUID, name, description, status, challengeAvailableFor, pledge]
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          description: Setting id - the gameSettingsId of `POST /v1/challenges/deeplink/generate`.
+          example: "00000000-0000-0000-0000-000000000201"
+        gameUUID:
+          type: string
+          format: uuid
+          example: "00000000-0000-0000-0000-000000000301"
+        name:
+          type: string
+          example: "Best of 1"
+        description:
+          type: string
+          example: "One match, winner takes the pot"
+        status:
+          type: string
+          example: "active"
+        challengeAvailableFor:
+          type: array
+          description: The periods, in minutes, a challenge of this format may stay open for.
+          items:
+            type: integer
+          example: [30, 60, 120]
+        pledge:
+          $ref: '#/components/schemas/GameSettingsPledge'
+
+    GameSettingsPledge:
+      type: object
+      required: [min, max]
+      description: Pledge limits in SBT, as decimal strings.
+      properties:
+        min:
+          type: string
+          example: "1"
+        max:
+          type: string
+          example: "100"
+
+    ListGameSettingsResponse:
+      type: object
+      required: [gameSettings, pagination]
+      properties:
+        gameSettings:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameSettings'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    ChallengeStatus:
+      type: string
+      enum: [MATCHMAKING, AWAIT_GAME, PREPARING_FOR_GAME, IN_GAME, RESOLVE_RESULTS]
+
+    ChallengeType:
+      type: string
+      enum: [PUBLIC, PRIVATE]
+
+    ChallengeSortField:
+      type: string
+      enum: [uuid, createdAt, startAt, completedAt, pledgeSBT, potentialWinSBT, game]
+
+    SortOrder:
+      type: string
+      enum: [ASC, DESC]
+
+    ParticipantOutcome:
+      type: string
+      enum: [WIN, LOSS, DRAW, FAIL, CANCELLED, VOIDED, LEAVE]
+
+    CursorPagination:
+      type: object
+      required: [hasNext, hasPrev, nextScrollID, prevScrollID]
+      properties:
+        nextScrollID:
+          type: string
+          description: Cursor for the next page; pass it as `cursor`.
+        prevScrollID:
+          type: string
+          description: Cursor for the previous page; pass it as `cursor`.
+        hasNext:
+          type: boolean
+          description: Whether a next page exists.
+        hasPrev:
+          type: boolean
+          description: Whether a previous page exists.
+
+    ListChallengesResponse:
+      type: object
+      required: [challenges, pagination]
+      properties:
+        challenges:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudioChallenge'
+        pagination:
+          $ref: '#/components/schemas/CursorPagination'
+
+    StudioChallenge:
+      type: object
+      required: [uuid, authorUUID, gameUUID, gameName, gameSettingsUUID, status, type, pledgeSBT, feeSBT, totalPledgeSBT, potentialWinSBT, availableFor, expireAt, createdAt, updatedAt, participants]
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          description: Sbarter challenge id - the resourceId of a `challenge` deep link destination.
+        authorUUID:
+          type: string
+          format: uuid
+          description: Sbarter player who created the challenge.
+        gameUUID:
+          type: string
+          format: uuid
+        gameName:
+          type: string
+        gameSettingsUUID:
+          type: string
+          format: uuid
+        sessionUUID:
+          type: string
+          format: uuid
+          description: Sbarter session id, present once the match is registered.
+        status:
+          $ref: '#/components/schemas/ChallengeStatus'
+        type:
+          $ref: '#/components/schemas/ChallengeType'
+        pledgeSBT:
+          type: string
+        feeSBT:
+          type: string
+        totalPledgeSBT:
+          type: string
+        potentialWinSBT:
+          type: string
+        availableFor:
+          type: integer
+          description: Minutes the challenge stays open.
+        expireAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudioChallengeParticipant'
+
+    StudioChallengeParticipant:
+      type: object
+      required: [gamerUUID, pledgeSBT, feeSBT, updatedAt]
+      properties:
+        gamerUUID:
+          type: string
+          format: uuid
+          description: Sbarter player id.
+        pledgeSBT:
+          type: string
+        feeSBT:
+          type: string
+        outcome:
+          $ref: '#/components/schemas/ParticipantOutcome'
+        balanceChangeSBT:
+          type: string
+        readyAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
