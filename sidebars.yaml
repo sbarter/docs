@@ -1,12 +1,15 @@
 
 - page: index.md
   label: Overview
+  icon: solid house
 
 - group: Getting Started
   expanded: true
+  icon: solid compass
   items:
     - page: getting-started/quickstart.md
       label: Quick Start
+      icon: solid rocket
     - page: getting-started/introduction.md
       label: Introduction
     - page: getting-started/architecture.md
@@ -14,8 +17,8 @@
     - page: getting-started/authentication.md
       label: Environments & Credentials
 
-
 - group: Integration Guides
+  icon: solid route
   items:
     - page: guides/index.md
       label: Integration Overview
@@ -30,31 +33,13 @@
     - page: guides/notifications.md
       label: Notifications & Deep Linking
 
-
-- group: API Reference
-  items:
-    - page: api/index.md
-      label: API Overview
-    - page: server.yaml
-      label: Sbarter API
-    - page: client.yaml
-      label: Game Studio API
-
-- group: Security & Operations
-  items:
-    - page: operations/index.md
-      label: Security and Operations
-
-- group: Testing & Releases
-  items:
-    - page: testing/index.md
-      label: Testing and Releases
-
 - group: Sbarter App – User Manual
   expanded: false
+  icon: solid book-open
   items:
     - page: app-manual/index.md
-      label: "The Sbarter App – User Manual"
+      label: "Orientation"
+      disconnect: false
     - page: app-manual/00-about-this-manual.md
       label: "0 · About this manual"
     - page: app-manual/01-sbarter-in-brief.md
@@ -87,3 +72,25 @@
       label: "Appendix B · Glossary"
     - page: app-manual/appendix-c-screens-still-to-capture.md
       label: "Appendix C · Screens still to capture"
+
+- group: API Reference
+  icon: solid code
+  items:
+    - page: api/index.md
+      label: API Overview
+    - page: server.yaml
+      label: Sbarter API
+    - page: client.yaml
+      label: Game Studio API
+
+- group: Security & Operations
+  icon: solid shield-halved
+  items:
+    - page: operations/index.md
+      label: Security and Operations
+
+- group: Testing & Releases
+  icon: solid clipboard-check
+  items:
+    - page: testing/index.md
+      label: Testing and Releases

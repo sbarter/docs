@@ -64,7 +64,6 @@ paths:
           schema:
             type: string
             format: uuid
-        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -79,9 +78,7 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: >-
-            Token is missing the linking.write scope, or the `User-Agent` header is missing or
-            empty (rejected at the network edge with an HTML body)
+          description: Forbidden
         "409":
           description: Request already processed (idempotency)
         "500":
@@ -125,8 +122,6 @@ paths:
       security:
         - OAuth2ClientCredentials:
             - linking.deeplink.write
-      parameters:
-        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -159,9 +154,7 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: >-
-            Token is missing the linking.deeplink.write scope, or the `User-Agent` header is
-            missing or empty (rejected at the network edge with an HTML body)
+          description: Token is missing the linking.deeplink.write scope
         "404":
           description: >-
             No game of this studio contests providerGameId, or the optional destination is missing,
@@ -199,8 +192,6 @@ paths:
       security:
         - OAuth2ClientCredentials:
             - linking.read
-      parameters:
-        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -235,9 +226,7 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: >-
-            Token is missing the linking.read scope, or the `User-Agent` header is missing or
-            empty (rejected at the network edge with an HTML body)
+          description: Token is missing the linking.read scope
         "500":
           description: Internal server error
 
@@ -255,8 +244,6 @@ paths:
       security:
         - OAuth2ClientCredentials:
             - webhook.write
-      parameters:
-        - $ref: '#/components/parameters/UserAgent'
       requestBody:
         required: true
         content:
@@ -271,9 +258,7 @@ paths:
         "401":
           description: Missing or invalid OAuth2 token
         "403":
-          description: >-
-            Token is missing the webhook.write scope, or the `User-Agent` header is missing or
-            empty (rejected at the network edge with an HTML body)
+          description: Forbidden
         "500":
           description: Internal server error
 
@@ -281,55 +266,122 @@ paths:
     post:
       security: []
       servers:
-        - url: https://keycloak.dev.sbarter.com
         - url: https://keycloak.test.sbarter.com
-        - url: https://id.sbarter.com
+          description: Staging identity provider (confirmed)
       tags:
         - OAuth 2.0 Client Credentials
       summary: Obtain Access Token (Client Credentials)
       operationId: obtainClientCredentialsToken
-      description: >
-        Issues an access token using OAuth 2.0 Client Credentials Grant.
-        The returned token_type is "Bearer".
-      parameters:
-        - $ref: '#/components/parameters/UserAgent'
+      description: |-
+        Obtain a short-lived OAuth 2.0 access token for calls from your VGP backend
+        to the Sbarter Game Integration API.
+
+        **Authentication flow:** `client_credentials`. You must first create your `client_id` 
+        and `client_secret` through the VGP Portal.
+
+        **Request encoding:** send an HTTP `POST` with
+        `Content-Type: application/x-www-form-urlencoded`. Do not send JSON,
+        multipart form-data, or quote the form values. A missing or incorrectly
+        encoded `grant_type` produces an OAuth `invalid_request` error.
+
+        **Client authentication:** the example sends `client_id` and `client_secret`
+        in the form body (`client_secret_post`). Whether HTTP Basic
+        (`client_secret_basic`) is available depends on the client configuration.
+        Always use HTTPS and keep the client secret server-side.
+
+        **Expiry:** `expires_in` is the access token's remaining lifetime **in
+        seconds from issuance**, not an absolute timestamp. For example,
+        `expires_in: 300` means the token expires in approximately **5 minutes**.
+        Cache and reuse the token until shortly before expiry (allowing for
+        network delay and clock skew), then request a new access token. Do not
+        request a token for every API call. The Client Credentials flow does not
+        require or normally return a refresh token.
+
+        **Using the token:** send `Authorization: Bearer <access_token>` on
+        subsequent Sbarter API calls. The `scope` response field, when present,
+        is a space-separated string of scopes actually granted to the client;
+        do not assume every scope listed in this specification is granted.
+
+        **Troubleshooting:** OAuth validation errors typically return JSON with
+        `error` and `error_description`. A generic HTML `403` response
+        may instead originate from an upstream load balancer, proxy, or WAF;
+        examine response headers and infrastructure logs.
       requestBody:
         required: true
+        description: Form-encoded OAuth Client Credentials token request. All three fields are required.
         content:
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/ClientCredentialsTokenRequest'
+            encoding:
+              grant_type:
+                style: form
+              client_id:
+                style: form
+              client_secret:
+                style: form
             examples:
               client_credentials:
+                summary: Staging client credentials request (replace placeholders)
                 value:
                   grant_type: client_credentials
-                  client_id: "<client_id>"
-                  client_secret: "<client_secret>"
+                  client_id: YOUR_CLIENT_ID
+                  client_secret: YOUR_CLIENT_SECRET
       responses:
         "200":
-          description: Token successfully issued
+          description: |-
+            Access token issued. `expires_in` is measured in **seconds**;
+            `300` indicates a **five-minute** lifetime, not 300 milliseconds
+            or an absolute time. Token lifetime and granted scopes are server-configured.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenResponse'
               examples:
                 ok:
+                  summary: Example token response (illustrative)
                   value:
-                    access_token: "<jwt>"
-                    token_type: "Bearer"
+                    access_token: eyJ...REDACTED
+                    token_type: Bearer
                     expires_in: 300
+                    scope: linking.read
         "400":
-          description: Invalid request
+          description: |-
+            Invalid or incorrectly encoded request, for example a missing
+            `grant_type` form field or unsupported grant type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthTokenError'
+              examples:
+                missing_grant_type:
+                  summary: Missing form-encoded grant_type
+                  value:
+                    error: invalid_request
+                    error_description: 'Missing form parameter: grant_type'
+                unsupported_grant_type:
+                  summary: Unsupported or disallowed grant type (illustrative)
+                  value:
+                    error: unsupported_grant_type
         "401":
-          description: Invalid client credentials
+          description: Invalid client authentication, such as an unknown client or incorrect secret.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthTokenError'
+              examples:
+                invalid_client:
+                  value:
+                    error: invalid_client
+                    error_description: Invalid client credentials
         "403":
-          description: >-
-            The `User-Agent` header is missing or empty (rejected at the network edge with an
-            HTML body, before the request reaches Keycloak)
+          description: |-
+            Request forbidden by the identity provider or an upstream access-control
+            layer. A proxy, ALB, or WAF may return HTML instead of an OAuth JSON error.
         "429":
-          description: Too many requests
+          description: Too many token requests; reduce request frequency and apply backoff. Exact rate limits are not specified.
         "500":
-          description: Internal server error
+          description: Identity provider or upstream server error; retry with bounded exponential backoff.
 
 components:
   securitySchemes:
@@ -340,27 +392,12 @@ components:
         clientId/clientSecret are managed in Keycloak and bound to a specific studio/game.
       flows:
         clientCredentials:
-          tokenUrl: https://keycloak.dev.sbarter.com/realms/studio_investor/protocol/openid-connect/token
+          tokenUrl: https://keycloak.test.sbarter.com/realms/studio_investor/protocol/openid-connect/token
           scopes:
             linking.write: Send in-app linking result to Sbarter.
             linking.deeplink.write: Generate linking deep links.
             linking.read: Read the link status of the studio's own provider accounts.
             webhook.write: Send match result webhooks to Sbarter.
-
-  parameters:
-    UserAgent:
-      name: User-Agent
-      in: header
-      required: true
-      description: >
-        Any non-empty value identifying your client. Requests without a `User-Agent` header, or
-        with an empty one, are rejected at the Sbarter network edge with `403 Forbidden` and an
-        HTML body, before they reach the token endpoint or the API. Most HTTP clients send it by
-        default; set it explicitly if your client strips default headers.
-      schema:
-        type: string
-        minLength: 1
-      example: <studio>-backend/1.0
 
   schemas:
     InAppLinkingResultWebhook:
@@ -534,37 +571,93 @@ components:
 
     ClientCredentialsTokenRequest:
       type: object
+      description: |-
+        OAuth 2.0 Client Credentials request. Serialize all properties as
+        `application/x-www-form-urlencoded`, not JSON. The client ID and secret
+        are created and managed in the VGP Portal.
       required: [grant_type, client_id, client_secret]
       properties:
         grant_type:
           type: string
           enum: [client_credentials]
+          description: |-
+            OAuth grant to request. For the VGP backend integration this must
+            be exactly `client_credentials` (no quotation marks).
           example: client_credentials
         client_id:
           type: string
-          example: "<client_id>"
+          minLength: 1
+          description: Public identifier for the authorised VGP OAuth client; generated in the VGP Portal.
+          example: YOUR_CLIENT_ID
         client_secret:
           type: string
-          example: "<client_secret>"
+          format: password
+          minLength: 1
+          writeOnly: true
+          description: |-
+            Confidential VGP OAuth client secret. Displayed once on creation;
+            store securely on your backend and never publish or embed in client code.
+          example: YOUR_CLIENT_SECRET
 
     TokenResponse:
       type: object
+      description: |-
+        Successful OAuth 2.0 token response. Token lifetimes and granted scopes
+        depend on server/client policy. Do not hard-code the example values.
       required: [access_token, token_type, expires_in]
       properties:
         access_token:
           type: string
-          example: "<jwt>"
+          description: |-
+            Short-lived bearer access token. Present it in the HTTP header
+            `Authorization: Bearer <access_token>` when calling Sbarter APIs.
+            Treat the token as a secret and do not log it.
+          example: eyJ...REDACTED
         token_type:
           type: string
           enum: [Bearer]
+          description: |-
+            OAuth token type. `Bearer` means possession of the token is
+            sufficient to authenticate a protected API request.
           example: Bearer
         expires_in:
           type: integer
+          format: int32
+          minimum: 0
+          description: |-
+            **Access token lifetime in seconds**, counted from token issuance.
+            Example: `300` = **300 seconds = 5 minutes**. This is a relative
+            lifetime, not a Unix timestamp or milliseconds. Cache the token,
+            renew shortly before expiry and do not assume every issued token
+            has the example lifetime.
           example: 300
         scope:
           type: string
-          nullable: true
-          example: "webhook.write"
+          description: |-
+            Space-separated list of OAuth scopes actually granted, when
+            included in the response, for example `linking.read webhook.write`.
+            The list can differ from the scopes configured in the specification.
+          example: linking.read
+    OAuthTokenError:
+      type: object
+      description: |-
+        OAuth-style JSON error returned by the token endpoint. Depending on
+        the infrastructure, some HTTP errors may instead contain plain HTML.
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: OAuth error identifier, for example `invalid_request`, `invalid_client` or `unsupported_grant_type`.
+          example: invalid_request
+        error_description:
+          type: string
+          description: Optional human-readable explanation intended for debugging; do not rely on its exact wording.
+          example: 'Missing form parameter: grant_type'
+        error_uri:
+          type: string
+          format: uri
+          description: Optional URL providing further details about the error.
+
     DeepLinkGenerateRequest:
       type: object
       required: [providerGameId, providerUserId]

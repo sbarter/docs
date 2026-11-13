@@ -1,0 +1,42 @@
+- group: Sbarter App – User Manual
+  expanded: true
+  items:
+    - page: index.md
+      label: Overview
+    - group: Orientation
+      items:
+        - page: 00-about-this-manual.md
+          label: "0 · About this manual"
+        - page: 01-sbarter-in-brief.md
+          label: "1 · Sbarter in brief"
+        - page: 02-getting-started.md
+          label: "2 · Getting started"
+    - group: Competing
+      items:
+        - page: 03-the-arena-finding-and-following-contests.md
+          label: "3 · The Arena"
+        - page: 04-1v1-challenges.md
+          label: "4 · 1v1 challenges"
+        - page: 05-tournaments.md
+          label: "5 · Tournaments"
+        - page: 06-play-and-compare.md
+          label: "6 · Play & Compare"
+    - group: The app
+      items:
+        - page: 07-the-sbarter-wallet.md
+          label: "7 · The Sbarter Wallet"
+        - page: 08-community-chats-friends-and-notifications.md
+          label: "8 · Community"
+        - page: 09-profile-and-statistics.md
+          label: "9 · Profile and statistics"
+        - page: 10-settings-and-player-safety.md
+          label: "10 · Settings and player safety"
+    - group: For the VGP
+      items:
+        - page: 11-how-the-game-and-the-app-work-together.md
+          label: "11 · Game and app together"
+    - page: ../index.md
+      label: "Back to Developer Hub"
+      icon: solid house
+      disconnect: true
+      separatorLine: true
