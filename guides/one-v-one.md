@@ -2,7 +2,7 @@
 
 This guide describes the player and system journey for a **1v1 skill-based challenge** between two players whose Video Game accounts are already linked to Sbarter. It is based on the supplied *1v1 and tournament player journey v8* design. **Product decisions in that journey are not necessarily capabilities of every integrated Video Game.**
 
-> **Integration status:** Sbarter's published API contracts cover registration of a two-player game session and receipt of a game-server result. Direct in-game invitations, contest-ready notifications, one-tap launch, presence lookup and some exception rules are **proposed / under development** and require an agreed implementation with the Video Game Studio.
+> **Integration status:** Sbarter's published API contracts cover challenge creation from the game, the challenge notifications (creation, invitation, acceptance, opponent waiting, completion), registration of a two-player game session and receipt of a game-server result. One-tap launch into a provisioned contest, presence lookup and some exception rules are **proposed / under development** and require an agreed implementation with the Video Game Studio.
 
 ## Responsibilities at a glance
 
@@ -19,13 +19,15 @@ This guide describes the player and system journey for a **1v1 skill-based chall
 
 | Stage | What happens | Responsible system | Published API / status |
 | --- | --- | --- | --- |
-| Create challenge | Player A selects mode, stake, how long the challenge remains open and contest completion window. | Sbarter | Sbarter application flow; no publisher API call required for challenge creation. |
+| Create challenge | Player A selects mode, stake, how long the challenge remains open and contest completion window. | Sbarter; optionally Studio | Sbarter application flow; no publisher API call required. From the game: [`POST /v1/challenges/deeplink/generate`](/server/vgp-deeplink/generatechallengedeeplink) opens creation prefilled with the format (`gameSettingsId` from `GET /v1/games/{gameUUID}/settings`), `type`, `pledge` and `availability`; the player confirms in Sbarter. Sbarter then sends `POST /v1/challenge/creation` with the creator. **Published**. |
 | Hold stake | Sbarter checks eligibility and balance and places Player A's stake in escrow. | Sbarter | Internal platform workflow. |
-| Discover or invite | Open challenges appear in Sbarter. Private invites target a selected Video Game player; optional studio-side messages can point to Sbarter. | Sbarter; optionally Studio | Studio notification delivery: **Under Development**. |
-| Accept challenge | Player B accepts in Sbarter and the matching stake is held. For an open challenge, Player A confirms or rejects B; private invited opponents do not require another confirmation in the source flow. | Sbarter | Internal platform workflow. |
-| Notify and launch | Both players see a contest-ready action. The proposed experience takes either player directly into their provisioned Video Game contest, with the first waiting for the second. | Sbarter; Studio | Direct launch and studio notifications: **Under Development**. |
-| Play and report | Studio's servers record the contest and send the final result to the callback provided at session registration. | Studio → Sbarter | [`POST /v1/webhooks/game-studio/match-result`](/server/webhook/postmatchresultwebhook), **published Sbarter API**; link currently points to the API specification landing page, pending operation permalink. |
-| Adjudicate and settle | Sbarter validates the result, applies competition rules and settles escrow. | Sbarter | Internal platform workflow. |
+| Discover or invite | Open challenges appear in Sbarter. Private invites target a selected Video Game player; optional studio-side messages can point to Sbarter. | Sbarter; optionally Studio | Sbarter → Studio [`POST /v1/challenge/invite`](/client) with the invited players: **Published**. `GET /v1/challenges` lists the active challenges in your games. |
+| Accept challenge | Player B accepts in Sbarter and the matching stake is held. For an open challenge, Player A confirms or rejects B; private invited opponents do not require another confirmation in the source flow. | Sbarter | Sbarter → Studio [`POST /v1/challenge/acceptance`](/client), players creator first: **Published**. |
+| Notify and launch | Both players see a contest-ready action. The proposed experience takes either player directly into their provisioned Video Game contest, with the first waiting for the second. | Sbarter; Studio | Sbarter → Studio [`POST /v1/challenge/await-opponent`](/client), waiting player first: **Published**. Direct launch: **Under Development**. |
+| Play and report | Studio's servers record the contest and send the final result to the callback provided at session registration. | Studio → Sbarter | [`POST /v1/webhooks/game-studio/match-result`](/server/webhook/postmatchresultwebhook), **published Sbarter API**. |
+| Adjudicate and settle | Sbarter validates the result, applies competition rules and settles escrow. | Sbarter | Internal platform workflow; then Sbarter → Studio [`POST /v1/challenge/completion`](/client): **Published**. |
+
+Each challenge notification carries `challengeId` and `providerGameId`; any `2xx` answer is enough. See [Notifications & Deep Linking](./notifications/#published-challenge-notifications).
 
 ## Game session registration: published contract
 
@@ -37,6 +39,7 @@ The current OpenAPI contract requires the following data in the request:
 | --- | --- | --- |
 | `providerGameId` | Required | Stable identifier for the integrated Video Game. |
 | `sessionId` | Required, UUID | Canonical Sbarter session ID and idempotency key. |
+| `challengeId` | UUID | The Sbarter challenge the session belongs to; the same value as in the challenge notifications. |
 | `players` | Required, exactly two entries | The two participants in the session. See the `PlayerMatchEntry` schema for the precise required properties. |
 | `expiresAt` | Required | Time after which the registered session should not be treated as valid. |
 | `webhookUrl` | Required | Callback URL the Studio **must** use to report the result. |
@@ -49,6 +52,8 @@ Repeated requests with the same `sessionId` and equivalent payload must be handl
 **Operation:** [`POST /v1/webhooks/game-studio/match-result`](/server/webhook/postmatchresultwebhook) (Sbarter API; Studio calls Sbarter).
 
 The published `GameResultWebhookPayload` requires `providerGameId`, `sessionId`, `matchId`, `status` and an array of exactly two `players`. Optional `startedAt` and `finishedAt` timestamps are also supported. The callback accepts safe duplicate retries and identifies a logical result using **`sessionId + matchId`**; the successful response is `202`.
+
+A result for an unknown `sessionId` is answered `404`, and a reported win without the player's `internalId` is refused.
 
 The Studio must use the `webhookUrl` provided when the session was registered. Sbarter must validate that the reported identities, contest/session and applicable timing and rules correspond to the pending challenge before settlement.
 
@@ -71,7 +76,8 @@ The Studio must use the `webhookUrl` provided when the session was registered. S
 - [ ] Studio uses the supplied `webhookUrl` and securely submits trusted contest results.
 - [ ] Duplicate result delivery is safe, using `sessionId + matchId`.
 - [ ] Direct entry into the existing contest and waiting-for-opponent behaviour have been agreed, if required.
-- [ ] In-game invitations and contest-ready notifications have an agreed delivery mechanism, if required.
+- [ ] The challenge notifications (`/v1/challenge/creation`, `/invite`, `/acceptance`, `/await-opponent`, `/completion`) are implemented and answer any `2xx`.
+- [ ] Contest-ready launch prompts have an agreed delivery mechanism, if required.
 - [ ] Missing-result and presence-evidence procedures are agreed before enabling real-stakes settlement.
 
 ## Related documentation

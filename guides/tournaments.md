@@ -2,7 +2,7 @@
 
 This guide translates the supplied *1v1 and tournament player journey v8*, page 2, into a generic Video Game Studio integration. The journey's **16-player, four-round single-elimination tournament** is an **illustrative competition configuration**, not a universal limit or default for every Sbarter tournament.
 
-> **Integration status:** The published Game Studio API currently registers **two-player sessions**. It can describe the individual contests within a tournament, but does not currently define tournament creation, bracket management, in-game round-ready messages, direct contest launch, missing-result presence lookup or tournament-specific settlement endpoints. Sbarter manages tournament logic internally; any studio-facing extensions are **under development**.
+> **Integration status:** The published Game Studio API currently registers **two-player sessions**. It can describe the individual contests within a tournament, but does not currently define tournament creation, bracket management, in-game round-ready messages, direct contest launch, missing-result presence lookup or tournament-specific settlement endpoints. The challenge notifications (`POST /v1/challenge/...`) are published for challenges; a dedicated tournament round notice is not. Sbarter manages tournament logic internally; any studio-facing extensions are **under development**.
 
 ## Operating model
 
@@ -30,12 +30,13 @@ These timings, thresholds and policies are drawn from the supplied example. They
 | Journey action | Responsible system | Published API / status |
 | --- | --- | --- |
 | Create tournament, register players, hold stakes, generate bracket | Sbarter | Sbarter application/backend responsibility, not a Studio API operation. |
-| Display next-round notification in Video Game | Sbarter → Studio | **Under Development:** publisher notification contract. |
+| Display next-round notification in Video Game | Sbarter → Studio | **Under Development:** tournament round notice. The published challenge notifications do not cover tournament rounds. |
+| Send a player to a tournament from the Video Game | Studio → Sbarter | **Published:** `POST /v1/linking/deeplink/generate` with a `tournament` destination; works for a player who is not linked yet, while the tournament is open for registration. |
 | Open a specific pre-created contest from the Sbarter app or Video Game | Sbarter and Studio | **Under Development:** contest-launch / readiness contract. |
 | Determine advancement, voids, byes, rewards | Sbarter | Internal competition adjudication and settlement. |
 | Obtain presence evidence or reconcile missing results | Studio ↔ Sbarter | **Under Development:** no corresponding presence or result-retrieval operation in supplied OpenAPI contracts. |
 
-The published `POST /v1/session` is a **two-player game-session registration** operation. Tournament membership, `tournamentId`, `roundId`, bracket location and contest readiness should not be presumed to exist in its current schema. Sbarter will need to correlate each registered session with its own internal tournament/round records, and any extra Studio-side identifiers must be explicitly agreed and documented.
+The published `POST /v1/session` is a **two-player game-session registration** operation. It may carry a `challengeId`, but tournament membership, `tournamentId`, `roundId`, bracket location and contest readiness should not be presumed to exist in its current schema. Sbarter will need to correlate each registered session with its own internal tournament/round records, and any extra Studio-side identifiers must be explicitly agreed and documented.
 
 ## Round execution and progression
 

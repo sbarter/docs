@@ -27,17 +27,21 @@ For more technical details, see the
 | 4. Play the contest | Open the publisher's game and play | Coordinate competition window and status | Run gameplay; record contest activity and authoritative result |
 | 5. Determine outcome | View result and reward | Validate result, apply contest rules, settle | Submit contest result; support agreed recovery information if missing |
 
-The published OpenAPI contracts currently specify the account-linking, player-profile, session-registration and contest-result interfaces. Certain interactions shown in the proposed Video Game integration journeys require additional contracts as they depend on publisher decisions. These are identified as **Under Development** below.
+The published OpenAPI contracts currently specify the account-linking, game and challenge lookup, challenge-creation deep link, challenge-notification, session-registration and contest-result interfaces. Certain interactions shown in the proposed Video Game integration journeys require additional contracts as they depend on publisher decisions. These are identified as **Under Development** below.
 
 ## API ownership and direction
 
 | Operation | Direction | Published endpoint |
 | --- | --- | --- |
+| Check credentials end to end | Publisher → Sbarter | `GET /v1/auth/check` |
 | Generate a linking deep link | Publisher → Sbarter | `POST /v1/linking/deeplink/generate` |
 | Check linking status | Publisher → Sbarter | `POST /v1/linking/status` |
 | Request user linking confirmation | Sbarter → Publisher | `POST /v1/sbarter/gamer/validate/in-app` |
 | Complete a linking decision | Publisher → Sbarter | `POST /v1/linking/in-app/{requestId}` |
-| Retrieve game-player profile | Sbarter → Publisher | `POST /v1/sbarter/gamer/profile` |
+| Retrieve game-player profile | Sbarter → Publisher | `POST /v1/sbarter/gamer/profile` (not called in the current Level 3 flow) |
+| List games, challenge settings, active challenges and challenge types | Publisher → Sbarter | `GET /v1/games`, `GET /v1/games/{gameUUID}/settings`, `GET /v1/challenges`, `GET /v1/challenges/types` |
+| Open challenge creation from the game | Publisher → Sbarter | `POST /v1/challenges/deeplink/generate` |
+| Notify challenge creation, invitation, acceptance, opponent waiting and completion | Sbarter → Publisher | `POST /v1/challenge/creation`, `/invite`, `/acceptance`, `/await-opponent`, `/completion` |
 | Register a game session | Sbarter → Publisher | `POST /v1/session` |
 | Submit contest result | Publisher → Sbarter | `POST /v1/webhooks/game-studio/match-result` |
 
@@ -52,10 +56,10 @@ See **API Reference → Sbarter API** and **API Reference → Game Studio API** 
 ## Integration Guides
 
 - **[Account Linking](./account-linking/):** Two generic onboarding journeys, published API mapping, conflict handling and open decisions.
-- **1v1 Challenge Integration (planned):** Challenge creation, acceptance, contest creation, play, results and settlement.
-- **Tournament Integration (planned):** Registration, brackets, rounds, game launch and reward handling.
-- **Game Results & Reconciliation (planned):** Server-authoritative results, missing-result paths and recovery rules.
-- **Notifications & Deep Linking (planned):** In-game messages and one-tap journeys between the app and game.
+- **[1v1 Challenge Integration](./one-v-one/):** Challenge creation, acceptance, contest creation, play, results and settlement.
+- **[Tournament Integration](./tournaments/):** Registration, brackets, rounds, game launch and reward handling.
+- **[Game Results & Reconciliation](./game-results/):** Server-authoritative results, missing-result paths and recovery rules.
+- **[Notifications & Deep Linking](./notifications/):** Deep links, challenge notifications and one-tap journeys between the app and game.
 
 ## Integration status and assumptions
 
@@ -63,8 +67,9 @@ See **API Reference → Sbarter API** and **API Reference → Game Studio API** 
 | --- | --- |
 | Published API operations in the table above | **Published contract**. Consult the OpenAPI reference before implementation. |
 | Direct launch into an existing publisher contest | **Under Development**. Proposed journey depends on publisher support. |
-| Publisher in-game invitation / contest-ready notifications | **Under Development**. Requires agreed notification contract. |
-| Publisher account discovery from a Sbarter-first user | **Under Development**. Published in-app validation needs an already-known game-account identifier. |
+| Publisher in-game challenge notifications (creation, invitation, acceptance, opponent waiting, completion) | **Published contract**. See [Notifications & Deep Linking](./notifications/). |
+| Contest-ready and tournament round notifications | **Under Development**. Requires agreed notification contract. |
+| Linking from a Sbarter-first user | **Published contract**. The player types their game account id in the Sbarter app and confirms it inside the game through the in-app validation flow. |
 | Player presence or login-window evidence for missing results | **Under Development**. Requires publisher confirmation and an agreed interface. |
 | Reconciliation lookup if a result callback never arrives | **Under Development**. Requires a published recovery interface. |
 

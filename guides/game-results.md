@@ -37,9 +37,9 @@ During `POST /v1/session`, Sbarter supplies the `webhookUrl` that the Studio **m
 | `players` | Required, exactly two entries | Each entry requires `providerUserId`, `internalId`, `outcome`; `outcome` is `win`, `loss` or `draw` |
 | `startedAt`, `finishedAt` | Optional timestamps | Contest activity times when available |
 
-The `internalId` property is marked **required but nullable** in the published `PlayerGameResult` schema. Consult the OpenAPI reference for exact serialization requirements. Do not infer a winner solely from `status` without evaluating the two player outcomes and the competition rules.
+The `internalId` of each player is the value Sbarter sent for that player in `POST /v1/session`. The schema allows `null`, but **a reported win without `internalId` is refused**, so always send it. Do not infer a winner solely from `status` without evaluating the two player outcomes and the competition rules.
 
-**Authentication:** OAuth 2.0 Client Credentials bearer token with `webhook.write` scope. The documented responses are `202` (accepted, including duplicate retries), `400`, `401`, `403` and `500`.
+**Authentication:** OAuth 2.0 Client Credentials bearer token with `webhook.write` scope. The documented responses are `202` (accepted, including duplicate retries), `400`, `401`, `403`, `404` (no session with this `sessionId` for your studio), `500` and `503` (temporarily unavailable; retry later).
 
 **Idempotency:** The published contract uses `sessionId + matchId` as the logical result idempotency key. The Studio may retry delivery without creating multiple settlements. Whether an existing logical result can later be corrected or superseded is **not defined** by the provided OpenAPI operation; any correction procedure must be agreed separately.
 
