@@ -1,0 +1,123 @@
+/* Godwin's palette (@theme/styles.css) mapped onto VitePress. */
+:root {
+  --vp-c-brand-1: #684bc8;
+  --vp-c-brand-2: #5138a9;
+  --vp-c-brand-3: #7356d8;
+  --vp-c-brand-soft: rgba(104, 75, 200, 0.14);
+  --vp-c-bg-alt: #f7f7fb;
+  --vp-c-divider: #e4e4ec;
+}
+
+.dark {
+  --vp-c-brand-1: #b8a1ff;
+  --vp-c-brand-2: #d0c0ff;
+  --vp-c-brand-3: #7356d8;
+  --vp-c-brand-soft: rgba(184, 161, 255, 0.16);
+  --vp-c-bg: #11131c;
+  --vp-c-bg-alt: #151823;
+  --vp-c-bg-soft: #1b1e2b;
+  --vp-c-bg-elv: #1b1e2b;
+  --vp-c-text-1: #ffffff;
+  --vp-c-text-2: #e0e1eb;
+  --vp-c-divider: #343445;
+  --vp-c-gutter: #0d0f16;
+  --vp-sidebar-bg-color: #151823;
+  --vp-nav-bg-color: #11131c;
+}
+
+.dark .VPSidebarItem .is-active > .item .text,
+.VPSidebarItem.is-active > .item .text {
+  color: var(--vp-c-brand-1);
+}
+
+/* The home page hero is designed to span the content area: keep it inside VitePress's layout. */
+.vp-doc .sbarter-hero {
+  width: auto;
+  margin-left: 0;
+  transform: none;
+  margin-top: 0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.vp-doc .sbarter-hero::before {
+  left: 0;
+  width: 100%;
+  transform: none;
+}
+.vp-doc .sbarter-hero h1 {
+  border: 0;
+  padding: 0;
+}
+.vp-doc .sbarter-hero__actions a.sbarter-btn {
+  text-decoration: none;
+}
+
+/* Redocly {% cards %} */
+.vp-doc .sb-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 20px 0 28px;
+}
+.vp-doc .sb-card {
+  display: block;
+  padding: 18px 20px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-2);
+  text-decoration: none;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.vp-doc a.sb-card:hover {
+  border-color: var(--vp-c-brand-1);
+  transform: translateY(-1px);
+}
+.vp-doc .sb-card p {
+  margin: 6px 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.vp-doc .sb-card .sb-card__title {
+  margin-top: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+}
+.vp-doc .sb-card strong {
+  color: var(--vp-c-brand-1);
+}
+
+/* Redoc pages use the full width under the navigation bar. */
+.sb-redoc {
+  min-height: 80vh;
+}
+.sb-redoc--dark .redoc-wrap,
+.sb-redoc--dark .api-content {
+  background: #11131c;
+  color: #e0e1eb;
+}
+.sb-redoc--dark h1,
+.sb-redoc--dark h2,
+.sb-redoc--dark h3,
+.sb-redoc--dark h4,
+.sb-redoc--dark h5,
+.sb-redoc--dark td,
+.sb-redoc--dark th,
+.sb-redoc--dark .api-content p,
+.sb-redoc--dark .api-content li {
+  color: #e0e1eb;
+}
+.sb-redoc--dark table td,
+.sb-redoc--dark table tr {
+  background: transparent !important;
+}
+/* VitePress resets list styles globally; Redoc descriptions need them back. */
+.sb-redoc .api-content ul {
+  list-style: disc;
+  padding-left: 1.5em;
+}
+.sb-redoc .api-content ol {
+  list-style: decimal;
+  padding-left: 1.5em;
+}

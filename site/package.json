@@ -1,0 +1,16 @@
+{
+  "name": "sbarter-developer-portal",
+  "private": true,
+  "type": "module",
+  "description": "Builds the Redocly portal sources in the repository root into a static site for GitHub Pages (VitePress + Redoc).",
+  "scripts": {
+    "prepare-src": "node prepare.mjs",
+    "dev": "node prepare.mjs && vitepress dev",
+    "build": "node prepare.mjs && vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "js-yaml": "4.1.0",
+    "vitepress": "1.6.4"
+  }
+}
