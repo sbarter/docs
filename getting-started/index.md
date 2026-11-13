@@ -13,12 +13,12 @@ Integrating a video game with Sbarter involves **two API directions**: your back
 
 | Stage | Your next action | Further information |
 | --- | --- | --- |
-| 1. Onboard | Arrange Studio Web Portal access, game registration and API connectivity | [Environments & Credentials](./authentication.md) |
+| 1. Onboard | Arrange Studio Web Portal access, your slug and `providerGameId`, then confirm connectivity with `GET /v1/auth/check` | [Environments & Credentials](./authentication.md) |
 | 2. Provide entry points | Add game-to-Sbarter entry points and linking deep links | [Notifications & Deep Linking](../guides/notifications.md) |
 | 3. Link accounts | Bind the correct player identities | [Account Linking](../guides/account-linking.md) |
 | 4. Register sessions | Implement the Sbarter-initiated session call | [1v1 Integration](../guides/one-v-one.md) |
 | 5. Return to the game | Plan the game launch/return handler; final contract remains to be agreed | [Notifications & Deep Linking](../guides/notifications.md) |
 | 6. Report a result | Submit the server-authoritative session result | [Game Results & Reconciliation](../guides/game-results.md) |
-| 7. Test and release | Validate interoperability before any production rollout | [Testing & Releases](../testing/index.md) |
+| 7. Test and release | Validate against the sandbox, then your live API, before any production rollout | [Testing & Releases](../testing/index.md) |
 
-> **Implementation status:** The published OpenAPI reference defines specific account-linking, profile, session-registration and result operations. Not every step above has an available API contract yet. See [Integration Status & Open Decisions](../operations/integration-status.md).
+> **Implementation status:** The published OpenAPI reference defines account-linking, game and challenge lookup, challenge-notification, session-registration and result operations. Not every step above has an available API contract yet. See [Integration Status & Open Decisions](../operations/integration-status.md).

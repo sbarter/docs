@@ -7,8 +7,9 @@ Sbarter enables eligible players to participate in skill-based challenges and to
 1. **Account linking:** establish an association between a player's Sbarter identity and their stable game-studio account identifier.
 2. **Session registration:** accept a game-session registration request from Sbarter for two linked players.
 3. **Contest results:** deliver the authoritative game result to Sbarter using the callback URL provided during session registration.
+4. **Challenge notifications:** receive Sbarter's notices when a challenge in your game is created, an invitation is sent, a challenge is accepted, a player is waiting for the opponent and a challenge is completed, and decide how to surface them in the game.
 
-The integration also supports retrieval of the game studio's current player profile snapshot, which may contain game-specific statistics in `profileStats`.
+Your game can also open challenge creation in the Sbarter app, prefilled with a format and pledge the player chose in the game. When a player confirms linking inside your game, your decision carries the player's profile snapshot, which may contain game-specific statistics in `profileStats`.
 
 ## Responsibilities
 
@@ -24,6 +25,8 @@ The integration also supports retrieval of the game studio's current player prof
 **Sbarter API:** hosted by Sbarter; called by the game studio. Refer to `server.yaml` under **API Reference**.
 
 **Game Studio API:** implemented and hosted by the game studio; called by Sbarter. Refer to `client.yaml` under **API Reference**.
+
+Each studio has one Sbarter API host, `https://partners.<env>.sbarter.com/<slug>`, served by a studio adapter on Sbarter's side. Until your Game Studio API is live, Sbarter's sandbox plays your side. See [Integration Model](./architecture.md).
 
 ## Continue
 

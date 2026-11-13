@@ -2,6 +2,20 @@
 
 The Sbarter integration uses different authentication schemes depending on which party initiates the call.
 
+## Environments
+
+Sbarter runs three environments. Each has its own API host, its own identity provider and its own credentials: a token issued in one environment is refused by the others, and the API key you issue to Sbarter is also set per environment.
+
+| Environment | Sbarter API base URL | Token URL |
+| --- | --- | --- |
+| Development | `https://partners.dev.sbarter.com/<slug>` | `https://keycloak.dev.sbarter.com/realms/studio_investor/protocol/openid-connect/token` |
+| Staging | `https://partners.test.sbarter.com/<slug>` | `https://keycloak.test.sbarter.com/realms/studio_investor/protocol/openid-connect/token` |
+| Production | `https://partners.sbarter.com/<slug>` | `https://id.sbarter.com/realms/studio_investor/protocol/openid-connect/token` |
+
+The `<slug>` is your studio's short name, given by Sbarter at onboarding (for example `acme`). Every Sbarter API path is appended to it: `https://partners.sbarter.com/acme/v1/linking/status`.
+
+Each of your games is registered against your studio with a `providerGameId`, the id you send for that game in every call. It is set by Sbarter, not taken from the game name shown in the Studio Web Portal; ask Sbarter for it. An id that is not registered is refused.
+
 ## Obtaining API Credentials
 
 Video Game Studios obtain and manage their API credentials through the **Sbarter Studio Web Portal**.
@@ -52,6 +66,24 @@ Use the generated `client_id` and `client_secret` with the OAuth 2.0 Client Cred
 See the **Obtain Access Token (Client Credentials)** operation in the [Sbarter API Reference](/server).
 
 Use the returned bearer token when calling protected Sbarter API endpoints.
+
+### Step 6. Check the connection
+
+Call `GET /v1/auth/check` once with the new token, and again after every rotation. It changes nothing; it only confirms that the token, your studio, your slug and the Sbarter gateway are all in place.
+
+```bash
+curl -i "https://partners.test.sbarter.com/<slug>/v1/auth/check" \
+  -H "Authorization: Bearer <access_token>" \
+  -H "User-Agent: <studio>-backend/1.0"
+```
+
+| Status | Meaning |
+| --- | --- |
+| `204 No Content` | Everything is in place; the next calls will be accepted |
+| `401 Unauthorized` | Token missing, expired, or issued by another environment's identity provider |
+| `403 Forbidden` | The token belongs to another studio, or the `User-Agent` header is missing (HTML body) |
+| `404 Not Found` | Unknown slug |
+| `503 Service Unavailable` | Your studio is not onboarded on this environment yet; contact Sbarter |
 
 ## Managing API Credentials
 
@@ -115,7 +147,7 @@ curl -X POST "https://<keycloak-host>/realms/studio_investor/protocol/openid-con
   -d "grant_type=client_credentials&client_id=<client_id>&client_secret=<client_secret>"
 ```
 
-Use the correct Keycloak host for the selected environment, as specified in the Sbarter API reference. Never include real client secrets in documentation, logs or source control.
+Use the token URL of the selected environment from the [Environments](#environments) table. Never include real client secrets in documentation, logs or source control.
 
 ### Required request headers
 
@@ -137,10 +169,11 @@ Find the detailed documentation of this request here:
 
 | Scope | Purpose |
 | --- | --- |
-| `linking.deeplink.write` | Generate linking deep links |
-| `linking.read` | Query linking status |
-| `linking.write` | Submit in-app linking decisions |
-| `webhook.write` | Submit contest results |
+| `linking.deeplink.write` | Generate linking deep links (`POST /v1/linking/deeplink/generate`) and challenge-creation deep links (`POST /v1/challenges/deeplink/generate`) |
+| `linking.read` | Query linking status (`POST /v1/linking/status`) |
+| `linking.write` | Submit in-app linking decisions (`POST /v1/linking/in-app/{requestId}`) |
+| `webhook.write` | Submit contest results (`POST /v1/webhooks/game-studio/match-result`) |
+| No scope, any valid token of your studio | `GET /v1/auth/check`, `GET /v1/games`, `GET /v1/games/{gameUUID}/settings`, `GET /v1/challenges`, `GET /v1/challenges/types` |
 
 Scopes are assigned individually. Inspect the `scope` claim on the issued token instead of assuming every scope is present.
 
@@ -152,7 +185,29 @@ The published Game Studio API uses the `X-API-Key` request header:
 X-API-Key: <studio-issued-api-key>
 ```
 
-The studio issues this credential for Sbarter's server-to-server calls, including in-app linking confirmation, profile retrieval and session registration.
+The studio issues this credential for Sbarter's server-to-server calls: in-app linking confirmation, session registration and challenge notifications.
+
+### How Sbarter calls your API
+
+| Rule | Behaviour |
+| --- | --- |
+| Request | Always `POST` with `Content-Type: application/json` and `X-API-Key` holding the key you issued for this environment |
+| Timeout | Sbarter waits up to **10 seconds** |
+| Any `2xx` | Delivered. The response body is not read, except where an operation defines one |
+| `4xx` | Your API refused that request (bad input, unknown account or game) |
+| `5xx`, `429` or timeout | Your API is treated as unavailable |
+| `401` / `403` | Treated as a configuration problem on Sbarter's side (wrong key), not as a player error |
+
+### Sandbox and live mode
+
+Sbarter's calls to your studio go to one of two places, set once per studio:
+
+| Mode | Where Sbarter's calls go |
+| --- | --- |
+| **Sandbox** (default) | Sbarter's own simulator plays your studio: it answers the in-app linking and session calls and posts results back, so you can exercise the Sbarter API end to end before your own Game Studio API exists. |
+| **Live** | Your Game Studio API, at the base URL and with the API key you entered for this environment in the **Studio Web Portal**. Sbarter forwards them to your adapter; the key is never shown again or logged. |
+
+Switching to live without both a base URL and an API key is refused (`467`, `errorCode` `VGP0002`). The mode only affects Sbarter → studio calls; your calls to the Sbarter API work the same in both modes.
 
 ## Credential handling
 
@@ -161,7 +216,7 @@ The studio issues this credential for Sbarter's server-to-server calls, includin
 - Cache the access token and request a new token before `expires_in` elapses. Client Credentials tokens do not use refresh tokens; avoid requesting a token for every API call.
 - Limit credential access to the intended environment and integration.
 - Avoid including tokens, secrets or raw personal data in logs.
-- Use the sandbox/test environment before production.
+- Use the development or staging environment, in sandbox mode first, before production.
 
 ## Common authentication errors
 
@@ -170,9 +225,13 @@ The studio issues this credential for Sbarter's server-to-server calls, includin
 | `400 invalid_request` on the token request | Body not sent as `application/x-www-form-urlencoded`, or a form parameter is missing |
 | `401 invalid_client` on the token request | Unknown `client_id`, or credentials used against the wrong environment |
 | `401 unauthorized_client` on the token request | Wrong, empty, rotated or revoked `client_secret` |
-| `401 Unauthorized` | Missing, expired or invalid credential; obtain a valid token or verify API key |
+| `401 Unauthorized` | Missing, expired or invalid credential, or a token from another environment; obtain a valid token or verify API key |
 | `403 Forbidden` with an HTML body | `User-Agent` header missing or empty; see [Required request headers](#required-request-headers) |
-| Any other `403 Forbidden` | Token does not provide the required scope, or access is not permitted |
+| Any other `403 Forbidden` | Token belongs to another studio or does not provide the required scope |
+| `404 Not Found` on `GET /v1/auth/check` | Unknown slug |
+| `503 Service Unavailable` | Your studio is not onboarded on this environment yet, or a Sbarter service is temporarily unavailable; retry later |
 | `429 Too Many Requests` | Back off according to the receiving API's rate limits, where applicable |
+
+JSON error bodies carry a fixed `error` text per status; rely on the HTTP status and, for `467`, on `errorCode`, never on the text. See [Errors and retries](../operations/index.md#errors-and-retries).
 
 See the individual operations in **API Reference** for the definitive supported response codes and security requirements.
