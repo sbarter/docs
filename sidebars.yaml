@@ -46,32 +46,24 @@
       label: "1 · Sbarter in brief"
     - page: app-manual/02-getting-started.md
       label: "2 · Getting started"
-    - page: app-manual/03-the-sbarter-wallet.md
-      label: "3 · The Sbarter Wallet"
-    - page: app-manual/04-games-and-game-accounts.md
-      label: "4 · Games and game accounts"
-    - page: app-manual/05-the-arena-finding-and-following-contests.md
-      label: "5 · The Arena: finding and following contests"
-    - page: app-manual/06-1v1-challenges.md
-      label: "6 · 1v1 challenges"
-    - page: app-manual/07-tournaments.md
-      label: "7 · Tournaments"
-    - page: app-manual/08-play-and-compare.md
-      label: "8 · Play & Compare"
-    - page: app-manual/09-community-chats-friends-and-notifications.md
-      label: "9 · Community: chats, friends and notifications"
-    - page: app-manual/10-profile-and-statistics.md
-      label: "10 · Profile and statistics"
-    - page: app-manual/11-settings-and-player-safety.md
-      label: "11 · Settings and player safety"
-    - page: app-manual/12-how-the-game-and-the-app-work-together.md
-      label: "12 · How the game and the app work together"
-    - page: app-manual/appendix-a-contest-states-and-statuses.md
-      label: "Appendix A · Contest states and statuses"
-    - page: app-manual/appendix-b-glossary.md
-      label: "Appendix B · Glossary"
-    - page: app-manual/appendix-c-screens-still-to-capture.md
-      label: "Appendix C · Screens still to capture"
+    - page: app-manual/03-the-arena-finding-and-following-contests.md
+      label: "3 · The Arena: finding and following contests"
+    - page: app-manual/04-1v1-challenges.md
+      label: "4 · 1v1 challenges"
+    - page: app-manual/05-tournaments.md
+      label: "5 · Tournaments"
+    - page: app-manual/06-play-and-compare.md
+      label: "6 · Play & Compare"
+    - page: app-manual/07-the-sbarter-wallet.md
+      label: "7 · The Sbarter Wallet"
+    - page: app-manual/08-community-chats-friends-and-notifications.md
+      label: "8 · Community: chats, friends and notifications"
+    - page: app-manual/09-profile-and-statistics.md
+      label: "9 · Profile and statistics"
+    - page: app-manual/10-settings-and-player-safety.md
+      label: "10 · Settings and player safety"
+    - page: app-manual/11-how-the-game-and-the-app-work-together.md
+      label: "11 · How the game and the app work together"
 
 - group: API Reference
   icon: solid code
