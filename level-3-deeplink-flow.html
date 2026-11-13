@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Level 3 Deep Link Linking Flow</title>
+    <link
+      href="https://fonts.googleapis.com/css?family=Montserrat:400,700|Roboto:300,400,700"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --panel: #ffffff;
+        --text: #1f2937;
+        --muted: #5b6472;
+        --border: #d8dee8;
+        --accent: #32329f;
+        --accent-soft: #eef0ff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #eef2ff 0%, var(--bg) 28%);
+        color: var(--text);
+        font-family: "Roboto", sans-serif;
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 20px 56px;
+      }
+
+      .hero {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 28px;
+        box-shadow: 0 18px 50px rgba(50, 50, 159, 0.08);
+      }
+
+      .eyebrow {
+        display: inline-block;
+        margin: 0 0 10px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      h1 {
+        font-size: clamp(1.9rem, 4vw, 3rem);
+        line-height: 1.05;
+      }
+
+      h2 {
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+      }
+
+      p {
+        margin: 12px 0 0;
+        line-height: 1.65;
+        color: var(--muted);
+      }
+
+      .meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+        margin-top: 22px;
+      }
+
+      .meta-card,
+      .section {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+      }
+
+      .meta-card {
+        padding: 16px 18px;
+      }
+
+      .meta-card strong {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--text);
+      }
+
+      .content {
+        margin-top: 22px;
+        display: grid;
+        gap: 18px;
+      }
+
+      .section {
+        padding: 22px;
+        overflow: hidden;
+      }
+
+      .section p:first-of-type {
+        margin-top: 0;
+      }
+
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 18px;
+        color: var(--accent);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .back-link:hover {
+        text-decoration: underline;
+      }
+
+      .mermaid {
+        margin-top: 14px;
+        padding: 8px 0 0;
+        overflow-x: auto;
+      }
+
+      code {
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: #f3f4f6;
+        color: #111827;
+        font-size: 0.95em;
+      }
+
+      .plain-box {
+        margin-top: 18px;
+        padding: 16px 18px;
+        border-radius: 16px;
+        background: #f8fafc;
+        border: 1px solid var(--border);
+      }
+
+      .plain-box strong {
+        color: var(--text);
+      }
+
+      ul.rules {
+        margin: 14px 0 0;
+        padding-left: 20px;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      ul.rules li + li {
+        margin-top: 8px;
+      }
+
+      @media (max-width: 640px) {
+        .hero,
+        .section {
+          padding: 20px;
+          border-radius: 16px;
+        }
+
+        .page {
+          padding: 20px 14px 40px;
+        }
+      }
+      table.codes { width: 100%; border-collapse: collapse; margin: 12px 0 4px; font-size: 14px; }
+      table.codes th, table.codes td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+      table.codes th { background: #f8fafc; }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <a class="back-link" href="./index.html">&larr; Back To API Docs</a>
+
+      <section class="hero">
+        <span class="eyebrow">Level 3 Flow</span>
+        <h1>Deep Link Linking</h1>
+        <p>
+          The player starts linking from inside the game. The Game Studio asks Sbarter for a one-time
+          link for the player's game account, hands it to the player, and the player opens it in the
+          Sbarter app. Sbarter does not call the Game Studio back; the studio checks the result with
+          the link status endpoint.
+        </p>
+
+        <div class="plain-box">
+          <strong>Scope:</strong>
+          The studio vouches for <code>providerUserId</code> (the player is logged in to the game);
+          the player proves the Sbarter side by opening the link while signed in to Sbarter.
+        </div>
+
+        <div class="meta">
+          <div class="meta-card">
+            <strong>Step 1: VGP mints the link</strong>
+            <p><code>POST /v1/linking/deeplink/generate</code></p>
+          </div>
+          <div class="meta-card">
+            <strong>Step 2: VGP checks the result</strong>
+            <p><code>POST /v1/linking/status</code></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="content">
+        <article class="section">
+          <h2>Before the first call</h2>
+          <ul class="rules">
+            <li><strong>Client credentials.</strong> Create them in the Sbarter web portal (your studio &rarr; API credentials). The client needs the scopes <code>linking.deeplink.write</code> and <code>linking.read</code>; the token's <code>scope</code> claim shows what you hold.</li>
+            <li><strong><code>providerGameId</code>.</strong> Sbarter registers each of your games against your studio with a <code>providerGameId</code>, the id you use for the game in every call. It is set by Sbarter (it is not the game name shown in the portal) - ask Sbarter for it. An id that is not registered, or registered only as your studio's default entry, is refused.</li>
+            <li><strong>Hosts.</strong> See <a href="./index.html">Servers</a> in the API reference: API <code>partners.&lt;env&gt;.sbarter.com/&lt;slug&gt;</code> (your slug is given by Sbarter), tokens from the Sbarter identity provider of the same environment. Credentials of one environment are refused by the others.</li>
+          </ul>
+        </article>
+
+        <article class="section">
+          <h2>Headers on every call</h2>
+          <table class="codes">
+            <tr><th>Header</th><th>Value</th><th>Without it</th></tr>
+            <tr><td><code>Authorization</code></td><td><code>Bearer &lt;access_token&gt;</code> from the client-credentials grant</td><td>401</td></tr>
+            <tr><td><code>Content-Type</code></td><td><code>application/json</code></td><td>required by the contract</td></tr>
+            <tr><td><code>User-Agent</code></td><td>any non-empty value, e.g. <code>&lt;studio&gt;-backend/1.0</code></td><td>403 with an HTML body, from the network edge</td></tr>
+          </table>
+          <p>The token endpoint takes <code>application/x-www-form-urlencoded</code> and also needs <code>User-Agent</code>. Reuse a token until shortly before <code>expires_in</code> runs out.</p>
+        </article>
+
+        <article class="section">
+          <h2>Sequence Diagram</h2>
+          <div class="mermaid">
+sequenceDiagram
+    participant Gamer
+    participant Game as Game client
+    participant Studio as Game Studio backend
+    participant IdP as Sbarter Identity Provider
+    participant Sbarter as Sbarter API
+    participant App as Sbarter app
+
+    Gamer->>Game: Tap "Link Sbarter account" (logged in to the game)
+    Game->>Studio: Request a link for this account
+    Studio->>IdP: Client-credentials token
+    IdP-->>Studio: Bearer access token
+    Studio->>Sbarter: POST /v1/linking/deeplink/generate
+    Note over Studio,Sbarter: providerGameId, providerUserId, providerDisplayName, optional destination
+    Sbarter-->>Studio: 201 linkId, deepLink, expiresAt (at most 15 min)
+    Studio-->>Game: deepLink
+    Game->>Gamer: Open deepLink
+
+    alt Sbarter app installed
+        Gamer->>App: Link opens the app
+    else Not installed
+        Gamer->>App: Web page -> store -> install, app picks the link up on first start
+    end
+
+    App->>App: Wait until the player is signed in (login / registration, PIN)
+    App->>Sbarter: Redeem the link
+    Sbarter->>Sbarter: Check link, account and player, add the game to the library
+    Sbarter-->>App: Linked
+    App->>Gamer: "Game connected" with providerDisplayName, then destination if any
+
+    Gamer->>Game: Return to the game
+    Studio->>Sbarter: POST /v1/linking/status
+    Sbarter-->>Studio: linked true, nickname, avatar, linkedAt
+          </div>
+        </article>
+
+        <article class="section">
+          <h2>What happens when the player opens the link</h2>
+          <ul class="rules">
+            <li>The <code>deepLink</code> is an https link (<code>https://connect.sbarter.com/linking/confirm/dl_...</code> in production, <code>connect.test.sbarter.com</code> on staging). Hand it over whole; never rebuild it from <code>linkId</code>.</li>
+            <li><strong>App installed:</strong> the link opens the Sbarter app directly.</li>
+            <li><strong>App not installed:</strong> the link opens a Sbarter page showing your game and studio with the store links. After install, the app picks the pending link up on first start (Android via the install referrer; iOS asks once for permission to read it). The 15-minute lifetime still applies.</li>
+            <li>The app keeps the link until the player is signed in - including registration and PIN setup - and then redeems it. There is no separate confirmation step; the player sees <em>Game connected</em> with your <code>providerDisplayName</code>, game name and icon. Send <code>providerDisplayName</code>: it is how the player recognises their account.</li>
+            <li>With a <code>destination</code>, the app then opens that challenge or tournament.</li>
+            <li>Nothing is sent to the studio. Call <code>POST /v1/linking/status</code> when the game regains focus.</li>
+          </ul>
+        </article>
+
+        <article class="section">
+          <h2>When the link does not link</h2>
+          <p>Redemption is all-or-nothing: if it is refused, the link stays unused and nothing is linked. The studio sees it only as <code>linked: false</code> on the status call.</p>
+          <table class="codes">
+            <tr><th>Reason</th><th>Code</th><th>What to do</th></tr>
+            <tr><td>Link expired (or from another environment)</td><td><code>GI0022</code></td><td>Mint a new link</td></tr>
+            <tr><td>Link already used</td><td><code>GI0021</code></td><td>Mint a new link</td></tr>
+            <tr><td>Game account linked to another Sbarter player meanwhile</td><td><code>GI0023</code></td><td>The player removes the game from the other Sbarter account first</td></tr>
+            <tr><td>Player already has this game in their Sbarter library</td><td><code>GI0006</code></td><td>Remove it in Sbarter, then link again</td></tr>
+            <tr><td>Player not verified, banned, or excluded by country / age rules</td><td><code>GI0012</code>, <code>GI0007</code>, <code>GI0008</code>-<code>GI0010</code></td><td>Player action in Sbarter</td></tr>
+          </table>
+          <p>At generation time the same account check runs: a <code>providerUserId</code> that is already linked is refused with <code>467 GI0023</code> and no link is minted. The one exception is a <code>challenge</code> destination, which needs the account to be linked already (see Destination).</p>
+        </article>
+
+        <article class="section">
+          <h2>Errors from generate and status</h2>
+          <p>Error bodies are JSON with a fixed <code>error</code> text per status. Business refusals use status <code>467</code> and add <code>errorCode</code>:</p>
+          <pre><code>{ "error": "Some conditions were not met", "errorCode": "GI0023", "additionalData": {} }</code></pre>
+          <table class="codes">
+            <tr><th>Status</th><th>generate</th><th>status</th></tr>
+            <tr><td>400</td><td>Body does not match the schema, <code>expiresAt</code> in the past, unsupported <code>destination.type</code>, or a <code>providerGameId</code> registered only as the studio default</td><td>Body does not match the schema</td></tr>
+            <tr><td>401</td><td colspan="2">Token missing, expired or from another environment</td></tr>
+            <tr><td>403</td><td>Token without <code>linking.deeplink.write</code>, a <code>challenge</code> destination for an account that is not linked or for a private challenge the player was not invited to, or missing <code>User-Agent</code> (HTML body)</td><td>Token without <code>linking.read</code>, or missing <code>User-Agent</code></td></tr>
+            <tr><td>404</td><td>No game of yours with this <code>providerGameId</code>, or the destination is not available</td><td>Never - unknown accounts answer <code>linked: false</code></td></tr>
+            <tr><td>467</td><td><code>GI0023</code> account already linked (not for a <code>challenge</code> destination)</td><td>-</td></tr>
+            <tr><td>503</td><td colspan="2">Temporarily unavailable - retry later</td></tr>
+          </table>
+        </article>
+
+        <article class="section">
+          <h2>Destination</h2>
+          <ul class="rules">
+            <li><code>destination</code> is optional: <code>{ "type": "challenge" | "tournament", "resourceId": "&lt;Sbarter uuid&gt;" }</code>.</li>
+            <li>A challenge must be of the same game, waiting for an opponent, and not expired. A tournament must be of the same game and still open for registration.</li>
+            <li>The <code>resourceId</code> is a Sbarter id, not one of yours. Take a challenge id from <code>GET /v1/challenges</code>; there is no client-credentials endpoint to list tournaments yet, so take a tournament id from your Sbarter web portal or ask Sbarter.</li>
+            <li>A <code>challenge</code> destination is for a player who is already linked, and a private challenge only for a player invited to it; otherwise <code>403</code>. A <code>tournament</code> destination also works for a player who is not linked yet.</li>
+            <li>Anything that fails the other checks is a <code>404</code> and no link is minted.</li>
+          </ul>
+        </article>
+      </section>
+    </main>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "base",
+        themeVariables: {
+          primaryColor: "#eef0ff",
+          primaryTextColor: "#1f2937",
+          primaryBorderColor: "#32329f",
+          lineColor: "#4b5563",
+          secondaryColor: "#ffffff",
+          tertiaryColor: "#f8fafc",
+          noteBkgColor: "#f8fafc",
+          noteBorderColor: "#cbd5e1",
+          actorBorder: "#32329f",
+          actorBkg: "#eef0ff",
+          actorTextColor: "#111827",
+          signalColor: "#374151"
+        }
+      });
+    </script>
+  </body>
+</html>
