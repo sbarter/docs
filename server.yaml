@@ -37,9 +37,10 @@ info:
       `https://partners.<env>.sbarter.com/<slug>` - the paths below are appended to it, e.g.
       `https://partners.sbarter.com/acme/v1/linking/status`.
 
-    - For Sbarter -> studio calls (see the VGP API), give Sbarter your base URL and an API key
-      per environment. Until your API is ready, Sbarter can point your studio at its sandbox, which
-      plays your side so you can test this API end to end.
+    - For Sbarter -> studio calls (see the VGP API), enter your base URL and an API key per
+      environment in the Studio Web Portal and switch your studio to live. Every studio starts in
+      sandbox mode, where Sbarter's simulator plays your side so you can test this API end to end
+      before your own API is ready.
 
 
     **Environments** - each has its own credentials; a token from one is refused by the others.
@@ -1391,10 +1392,10 @@ components:
         providerDisplayName:
           type: string
           description: >-
-            Human-readable provider display name. Strongly recommended: it is what the player is
-            shown on the confirmation screen, and it is their only way to notice that a link which
-            reached them belongs to somebody else. Without it the screen can show only the raw
-            account id.
+            Human-readable provider display name. Strongly recommended: it is the name the player is
+            shown on the "Game connected" screen after the link is redeemed, and it is their only way
+            to notice that a link which reached them belongs to somebody else. Without it the app can
+            show only the raw account id.
           example: "DragonSlayer42"
         expiresAt:
           type: string
