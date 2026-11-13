@@ -15,7 +15,7 @@ info:
 
     - The studio's games and their challenge settings
 
-    - The studio's active challenges
+    - The studio's active challenges and the challenge types
 
     - Challenge creation deep link generation
 
@@ -84,7 +84,7 @@ info:
 
 
     **Games, settings and challenges** - `GET /v1/games`, `GET /v1/games/{gameUUID}/settings`,
-    `GET /v1/challenges` and `POST /v1/challenges/deeplink/generate` are being enabled studio by
+    `GET /v1/challenges`, `GET /v1/challenges/types` and `POST /v1/challenges/deeplink/generate` are being enabled studio by
     studio; ask Sbarter whether they are live for your slug. `GET /v1/games` returns Sbarter's own
     id for each of your games (`gameUUID`), which the settings and challenge endpoints use; it is
     not your `providerGameId`.
@@ -661,6 +661,42 @@ paths:
             The token belongs to another studio, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
         "404":
           description: The game does not exist, is not available or belongs to another studio
+        "500":
+          description: Internal server error
+        "503":
+          description: Temporarily unavailable - retry later
+
+  /v1/challenges/types:
+    get:
+      tags:
+        - VGP - Challenges
+      summary: List the challenge types
+      operationId: listChallengeTypes
+      description: >
+        Returns the challenge types Sbarter supports - the values the `types` filter of
+        `GET /v1/challenges` takes. The `type` of `POST /v1/challenges/deeplink/generate` is the
+        same choice in lower case (`public`, `private`).
+
+
+        Authorization: Bearer <access_token>. Any valid token of the studio; no extra scope.
+      security:
+        - OAuth2ClientCredentials: []
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
+      responses:
+        "200":
+          description: The supported challenge types
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListChallengeTypesResponse'
+              example:
+                types: [PUBLIC, PRIVATE]
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: >-
+            The token belongs to another studio, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
         "500":
           description: Internal server error
         "503":
@@ -1606,6 +1642,15 @@ components:
     ChallengeType:
       type: string
       enum: [PUBLIC, PRIVATE]
+
+    ListChallengeTypesResponse:
+      type: object
+      required: [types]
+      properties:
+        types:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChallengeType'
 
     ChallengeSortField:
       type: string

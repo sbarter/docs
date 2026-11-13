@@ -84,6 +84,8 @@ paths:
         not need to echo the request identifiers back.
         The request only needs provider-side identifiers that the partner can
         resolve directly.
+        Sbarter does not call this endpoint in the current Level 3 flow: the profile
+        snapshot arrives with an accepted in-app linking decision instead.
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -146,6 +148,34 @@ paths:
           description: SessionId already exists with a conflicting payload
         "429":
           description: Too many requests
+        "500":
+          description: Internal server error
+
+  /v1/challenge/creation:
+    post:
+      tags: [Challenge]
+      summary: Challenge created
+      operationId: sendChallengeCreation
+      description: >
+        Sbarter tells the Game Studio a challenge was created in its game. Players hold the creator
+        only, as a linked player (internalId + providerUserId).
+        A notification: nothing is expected back beyond a 2xx, and the Game Studio decides how to
+        surface it in the game.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChallengeNotificationRequest'
+      responses:
+        "2XX":
+          description: Notification accepted
+        "400":
+          description: Invalid request
+        "401":
+          description: Missing or invalid API key
         "500":
           description: Internal server error
 
