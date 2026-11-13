@@ -1,0 +1,88 @@
+
+- page: index.md
+  label: Overview
+  icon: solid house
+
+- group: Getting Started
+  expanded: true
+  icon: solid compass
+  items:
+    - page: getting-started/quickstart.md
+      label: Quick Start
+      icon: solid rocket
+    - page: getting-started/introduction.md
+      label: Introduction
+    - page: getting-started/architecture.md
+      label: Integration Model
+    - page: getting-started/authentication.md
+      label: Environments & Credentials
+
+- group: Integration Guides
+  icon: solid route
+  items:
+    - page: guides/index.md
+      label: Integration Overview
+    - page: guides/account-linking.md
+      label: Account Linking
+    - page: guides/one-v-one.md
+      label: 1v1 Challenge Integration
+    - page: guides/tournaments.md
+      label: Tournament Integration
+    - page: guides/game-results.md
+      label: Game Results & Reconciliation
+    - page: guides/notifications.md
+      label: Notifications & Deep Linking
+
+- group: Sbarter App – User Manual
+  expanded: false
+  icon: solid book-open
+  items:
+    - page: app-manual/index.md
+      label: "Orientation"
+      disconnect: false
+    - page: app-manual/00-about-this-manual.md
+      label: "0 · About this manual"
+    - page: app-manual/01-sbarter-in-brief.md
+      label: "1 · Sbarter in brief"
+    - page: app-manual/02-getting-started.md
+      label: "2 · Getting started"
+    - page: app-manual/03-the-arena-finding-and-following-contests.md
+      label: "3 · The Arena: finding and following contests"
+    - page: app-manual/04-1v1-challenges.md
+      label: "4 · 1v1 challenges"
+    - page: app-manual/05-tournaments.md
+      label: "5 · Tournaments"
+    - page: app-manual/06-play-and-compare.md
+      label: "6 · Play & Compare"
+    - page: app-manual/07-the-sbarter-wallet.md
+      label: "7 · The Sbarter Wallet"
+    - page: app-manual/08-community-chats-friends-and-notifications.md
+      label: "8 · Community: chats, friends and notifications"
+    - page: app-manual/09-profile-and-statistics.md
+      label: "9 · Profile and statistics"
+    - page: app-manual/10-settings-and-player-safety.md
+      label: "10 · Settings and player safety"
+    - page: app-manual/11-how-the-game-and-the-app-work-together.md
+      label: "11 · How the game and the app work together"
+
+- group: API Reference
+  icon: solid code
+  items:
+    - page: api/index.md
+      label: API Overview
+    - page: server.yaml
+      label: Sbarter API
+    - page: client.yaml
+      label: Game Studio API
+
+- group: Security & Operations
+  icon: solid shield-halved
+  items:
+    - page: operations/index.md
+      label: Security and Operations
+
+- group: Testing & Releases
+  icon: solid clipboard-check
+  items:
+    - page: testing/index.md
+      label: Testing and Releases

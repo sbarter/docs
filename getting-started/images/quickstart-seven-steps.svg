@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 455" role="img" aria-labelledby="title desc">
+<title id="title">Seven steps to integrate with Sbarter</title>
+<desc id="desc">A seven-step integration roadmap from onboarding and linking to sessions, launch, results, and production release.</desc>
+<rect width="1400" height="455" rx="25" fill="#f6f4fc"/>
+<text x="42" y="61" font-size="30" font-weight="750" font-family="Arial,sans-serif" fill="#1d1733">Your integration journey</text>
+<text x="42" y="91" font-size="18" font-family="Arial,sans-serif" fill="#6b6181">Seven steps from first access to production</text>
+<rect x="42" y="123" width="310" height="115" rx="16" fill="#ffffff" stroke="#ded6f3" stroke-width="2"/>
+<circle cx="77" cy="158" r="22" fill="#6d40d9"/>
+<text x="77" y="165" text-anchor="middle" font-size="18" font-weight="700" font-family="Arial,sans-serif" fill="#ffffff">01</text>
+<text x="110" y="160" font-size="20" font-weight="700" font-family="Arial,sans-serif" fill="#241b3d">Onboard</text>
+<text x="66" y="203" font-size="17" font-family="Arial,sans-serif" fill="#6b6181">Portal &amp; credentials</text>
+<path d="M 356 180 H 378" stroke="#8b65e3" stroke-width="3" fill="none"/>
+<path d="M 370 173 L 378 180 L 370 187" stroke="#8b65e3" stroke-width="3" fill="none"/>
+<rect x="385" y="123" width="310" height="115" rx="16" fill="#ffffff" stroke="#ded6f3" stroke-width="2"/>
+<circle cx="420" cy="158" r="22" fill="#6d40d9"/>
+<text x="420" y="165" text-anchor="middle" font-size="18" font-weight="700" font-family="Arial,sans-serif" fill="#ffffff">02</text>
+<text x="453" y="160" font-size="20" font-weight="700" font-family="Arial,sans-serif" fill="#241b3d">Open the door</text>
+<text x="409" y="203" font-size="17" font-family="Arial,sans-serif" fill="#6b6181">Game entry points</text>
+<path d="M 699 180 H 721" stroke="#8b65e3" stroke-width="3" fill="none"/>
+<path d="M 713 173 L 721 180 L 713 187" stroke="#8b65e3" stroke-width="3" fill="none"/>
+<rect x="728" y="123" width="310" height="115" rx="16" fill="#ffffff" stroke="#ded6f3" stroke-width="2"/>
+<circle cx="763" cy="158" r="22" fill="#6d40d9"/>
+<text x="763" y="165" text-anchor="middle" font-size="18" font-weight="700" font-family="Arial,sans-serif" fill="#ffffff">03</text>
+<text x="796" y="160" font-size="20" font-weight="700" font-family="Arial,sans-serif" fill="#241b3d">Link accounts</text>
+<text x="752" y="203" font-size="17" font-family="Arial,sans-serif" fill="#6b6181">Either starting point</text>
+<path d="M 1042 180 H 1064" stroke="#8b65e3" stroke-width="3" fill="none"/>
+<path d="M 1056 173 L 1064 180 L 1056 187" stroke="#8b65e3" stroke-width="3" fill="none"/>
+<rect x="1071" y="123" width="310" height="115" rx="16" fill="#ffffff" stroke="#ded6f3" stroke-width="2"/>
+<circle cx="1106" cy="158" r="22" fill="#6d40d9"/>
+<text x="1106" y="165" text-anchor="middle" font-size="18" font-weight="700" font-family="Arial,sans-serif" fill="#ffffff">04</text>
+<text x="1139" y="160" font-size="20" font-weight="700" font-family="Arial,sans-serif" fill="#241b3d">Register sessions</text>
+<text x="1095" y="203" font-size="17" font-family="Arial,sans-serif" fill="#6b6181">Sbarter → Studio API</text>
+<rect x="213" y="276" width="310" height="115" rx="16" fill="#ffffff" stroke="#ded6f3" stroke-width="2"/>
+<circle cx="248" cy="311" r="22" fill="#6d40d9"/>
+<text x="248" y="318" text-anchor="middle" font-size="18" font-weight="700" font-family="Arial,sans-serif" fill="#ffffff">05</text>
+<text x="281" y="313" font-size="20" font-weight="700" font-family="Arial,sans-serif" fill="#241b3d">Launch match</text>
+<text x="237" y="356" font-size="17" font-family="Arial,sans-serif" fill="#6b6181">Return to the game</text>
+<path d="M 527 333 H 549" stroke="#8b65e3" stroke-width="3" fill="none"/>
+<path d="M 541 326 L 549 333 L 541 340" stroke="#8b65e3" stroke-width="3" fill="none"/>
+<rect x="556" y="276" width="310" height="115" rx="16" fill="#ffffff" stroke="#ded6f3" stroke-width="2"/>
+<circle cx="591" cy="311" r="22" fill="#6d40d9"/>
+<text x="591" y="318" text-anchor="middle" font-size="18" font-weight="700" font-family="Arial,sans-serif" fill="#ffffff">06</text>
+<text x="624" y="313" font-size="20" font-weight="700" font-family="Arial,sans-serif" fill="#241b3d">Report results</text>
+<text x="580" y="356" font-size="17" font-family="Arial,sans-serif" fill="#6b6181">Studio → Sbarter API</text>
+<path d="M 870 333 H 892" stroke="#8b65e3" stroke-width="3" fill="none"/>
+<path d="M 884 326 L 892 333 L 884 340" stroke="#8b65e3" stroke-width="3" fill="none"/>
+<rect x="899" y="276" width="310" height="115" rx="16" fill="#ffffff" stroke="#ded6f3" stroke-width="2"/>
+<circle cx="934" cy="311" r="22" fill="#6d40d9"/>
+<text x="934" y="318" text-anchor="middle" font-size="18" font-weight="700" font-family="Arial,sans-serif" fill="#ffffff">07</text>
+<text x="967" y="313" font-size="20" font-weight="700" font-family="Arial,sans-serif" fill="#241b3d">Go live</text>
+<text x="923" y="356" font-size="17" font-family="Arial,sans-serif" fill="#6b6181">Test &amp; release</text>
+<path d="M 1380 239 V 266 H 215 V 270" fill="none" stroke="#b0a3cc" stroke-width="2" stroke-dasharray="6 7"/>
+<text x="42" y="431" font-size="15" font-family="Arial,sans-serif" fill="#6b6181">Detailed implementation steps and authoritative API contracts are linked below.</text>
+</svg>

@@ -250,9 +250,13 @@
             <tr><td><code>POST /v1/linking/in-app/{requestId}</code></td><td><code>linking.write</code></td><td>Decision on an in-app linking request - call the <code>webhookUrl</code> Sbarter sent</td></tr>
             <tr><td><code>POST /v1/linking/deeplink/generate</code></td><td><code>linking.deeplink.write</code></td><td>Single-use link that connects the player's game account</td></tr>
             <tr><td><code>POST /v1/linking/status</code></td><td><code>linking.read</code></td><td>Is this game account linked to a Sbarter player</td></tr>
+            <tr><td><code>GET /v1/games</code></td><td>any</td><td>Your games with Sbarter's id (<code>gameUUID</code>), name and status</td></tr>
+            <tr><td><code>GET /v1/games/{gameUUID}/settings</code></td><td>any</td><td>Challenge formats of a game: pledge limits and how long a challenge may stay open</td></tr>
+            <tr><td><code>GET /v1/challenges</code></td><td>any</td><td>Active challenges in your games, with participants</td></tr>
+            <tr><td><code>POST /v1/challenges/deeplink/generate</code></td><td><code>linking.deeplink.write</code></td><td>Link that opens challenge creation in Sbarter with your values prefilled</td></tr>
             <tr><td><code>POST /v1/webhooks/game-studio/match-result</code></td><td><code>webhook.write</code></td><td>Result of a match Sbarter registered - call the <code>webhookUrl</code> Sbarter sent</td></tr>
           </table>
-          <p>Every call carries <code>Authorization: Bearer &lt;token&gt;</code>, <code>Content-Type: application/json</code> on POST and a non-empty <code>User-Agent</code>.</p>
+          <p>Every call carries <code>Authorization: Bearer &lt;token&gt;</code>, <code>Content-Type: application/json</code> on POST and a non-empty <code>User-Agent</code>. The games, settings and challenge endpoints are being enabled studio by studio - ask Sbarter whether they are live for your slug.</p>
         </article>
 
         <article class="section">
@@ -264,7 +268,7 @@
             <tr><td><code>POST /v1/session</code></td><td>Both players of a challenge are ready</td><td><code>201</code>; same payload again <code>200</code>; other payload, same <code>sessionId</code> <code>409</code></td></tr>
             <tr><td><code>POST /v1/challenge/invite</code>, <code>/acceptance</code>, <code>/await-opponent</code>, <code>/completion</code></td><td>Challenge lifecycle, informational</td><td>any 2xx</td></tr>
           </table>
-          <p>Every call is a <code>POST</code> with <code>Content-Type: application/json</code> and <code>X-API-Key</code>.</p>
+          <p>Every call is a <code>POST</code> with <code>Content-Type: application/json</code> and <code>X-API-Key</code>. Sbarter waits up to 10 seconds; any 2xx counts as delivered. 4xx means you refused that request; 5xx, 429 and timeouts mean your API is unavailable; 401/403 mean a wrong key on Sbarter's side.</p>
         </article>
 
         <article class="section">
@@ -280,9 +284,19 @@
           <h2>A challenge match</h2>
           <div class="diagram"><img src="assets/level-3-match-flow.svg" alt="A challenge match"></div>
           <ul class="rules">
-            <li><strong>Register.</strong> When both players are ready Sbarter calls <code>POST /v1/session</code> with <code>sessionId</code>, both players (your <code>providerUserId</code> + Sbarter <code>internalId</code>), the rules, <code>expiresAt</code> and a <code>webhookUrl</code>.</li>
+            <li><strong>Register.</strong> When both players are ready Sbarter calls <code>POST /v1/session</code> with <code>sessionId</code>, the <code>challengeId</code> of the challenge notifications, both players (your <code>providerUserId</code> + Sbarter <code>internalId</code>), the rules, <code>expiresAt</code> and a <code>webhookUrl</code>.</li>
             <li><strong>Report.</strong> When the match ends, call the <code>webhookUrl</code> with <code>sessionId</code>, your <code>matchId</code>, <code>status</code> (<code>win</code>, <code>draw</code>, <code>failed</code>, <code>voided</code>) and exactly two players with their outcome.</li>
             <li><strong>Retries are safe.</strong> <code>sessionId</code> + <code>matchId</code> is the idempotency key: a repeated result is recognised, never applied twice.</li>
+          </ul>
+        </article>
+
+        <article class="section">
+          <h2>A challenge created from your game</h2>
+          <div class="diagram"><img src="assets/level-3-challenge-deeplink-flow.svg" alt="A challenge created from the game"></div>
+          <ul class="rules">
+            <li><strong>Read the formats.</strong> Once, and when your game's configuration changes: <code>GET /v1/games</code> for Sbarter's <code>gameUUID</code>, then <code>GET /v1/games/{gameUUID}/settings</code> for the challenge formats, pledge limits and availability periods.</li>
+            <li><strong>Mint the link.</strong> The player picks a format, public or private, a pledge and how long the challenge stays open. Your backend calls <code>POST /v1/challenges/deeplink/generate</code> with <code>providerGameId</code>, <code>providerUserId</code>, <code>gameSettingsId</code>, <code>type</code>, <code>pledge</code> (decimal string, up to 6 fractional digits) and <code>availability</code> (minutes, integer string).</li>
+            <li><strong>Open it in Sbarter.</strong> The player opens the returned <code>deepLink</code>; the Sbarter app opens challenge creation with those values. From there it is the match flow above.</li>
           </ul>
         </article>
 
@@ -293,7 +307,7 @@
             <tr><td>400</td><td>The payload does not match the schema</td></tr>
             <tr><td>401</td><td>Token missing, expired or from another environment</td></tr>
             <tr><td>403</td><td>Token of another studio, missing scope, or missing <code>User-Agent</code> (HTML body)</td></tr>
-            <tr><td>404</td><td>Unknown <code>providerGameId</code>, request or session</td></tr>
+            <tr><td>404</td><td>Unknown <code>providerGameId</code>, game, request or session</td></tr>
             <tr><td>409</td><td>Already processed</td></tr>
             <tr><td>467</td><td>Business rule refusal - see <code>errorCode</code>: <code>GI0021</code> link already used, <code>GI0022</code> link expired or unknown, <code>GI0023</code> account already linked to another player</td></tr>
             <tr><td>503</td><td>Temporarily unavailable - retry later</td></tr>

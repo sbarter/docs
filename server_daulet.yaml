@@ -1,0 +1,676 @@
+openapi: 3.0.3
+info:
+  title: Sbarter API - Game Studio Integration (Server Implementation)
+  version: 1.0.0
+  description: >
+    This OpenAPI describes the endpoints exposed by Sbarter that the Game Studio calls:
+
+    - In-app linking result webhook
+
+    - Linking deep link generation
+
+    - Linking status lookup
+
+    - Match result webhooks
+
+
+    It also documents the OAuth2 Client Credentials token endpoint (Keycloak).
+
+
+    Every grant listed under OAuth2ClientCredentials is issued separately. A studio may hold one
+    without the others, so check the `scope` claim of the token you were issued rather than
+    assuming the full set.
+
+servers:
+  - url: https://webhook.dev.sbarter.com
+    description: Sbarter API
+  - url: https://keycloak.dev.sbarter.com
+    description: Sbarter Identity Provider (Keycloak)
+
+tags:
+  - name: VGP - In App Confirmation
+    description: Game Studio -> Sbarter for account linking result
+  - name: VGP - DeepLink
+    description: Game Studio -> Sbarter deep link generation (opens Sbarter mobile app)
+  - name: VGP - Link Status
+    description: Game Studio -> Sbarter lookup of whether one of its own accounts is linked
+  - name: Webhook
+    description: Game Studio -> Sbarter webhook endpoints (game results)
+  - name: OAuth 2.0 Client Credentials
+    description: Token issuance endpoint (Keycloak)
+
+paths:
+  /v1/linking/in-app/{requestId}:
+    post:
+      tags:
+        - VGP - In App Confirmation
+      summary: Linking result (accepted/rejected/expired)
+      operationId: postInAppLinkingResult
+      description: >
+        Game Studio calls this endpoint after the user confirms or rejects linking inside the game.
+        This is the FINAL decision for the given requestId.
+        When linking is accepted, the payload must include the verified
+        provider profile snapshot captured at link time.
+
+        Authorization: Bearer <access_token>
+      security:
+        - OAuth2ClientCredentials:
+            - linking.write
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          description: Linking request identifier (UUID)
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/UserAgent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InAppLinkingResultWebhook'
+      responses:
+        "202":
+          description: Accepted for processing
+        "400":
+          description: Invalid payload
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: >-
+            Token is missing the linking.write scope, or the `User-Agent` header is missing or
+            empty (rejected at the network edge with an HTML body)
+        "409":
+          description: Request already processed (idempotency)
+        "500":
+          description: Internal server error
+
+
+  /v1/linking/deeplink/generate:
+    post:
+      tags:
+        - VGP - DeepLink
+      summary: Mint a linking deep link for one of the studio's players
+      operationId: generateLinkingDeepLink
+      description: >
+        Called from inside the studio's own game, for a player who is logged in there. The studio
+        is asserting two things by calling this: that providerUserId is one of its accounts, and
+        that the returned link reaches that account's player and nobody else.
+
+
+        That assertion is the studio's half of the ownership proof. The other half is the player
+        tapping the link and authenticating with Sbarter, after which the game is added to their
+        library. **There is no callback to the studio** - this flow does not use the in-app
+        linking webhook, and nothing is sent back when the link is redeemed. To find out whether
+        it worked, call [`POST /v1/linking/status`](/server/vgp-link-status).
+
+
+        The studio is taken from the access token, never from the payload. There is no way to mint
+        a link for another studio's account.
+
+
+        The link is single-use. Its deadline is capped by Sbarter, so an expiresAt further out
+        than the cap is stored at the cap rather than refused - read expiresAt in the response
+        rather than assuming the requested value was kept.
+
+
+        An optional destination can send the player to a Sbarter tournament or challenge after
+        they confirm the link. Sbarter checks that the target exists, belongs to the resolved
+        game, and is open for participation. Without it, the normal post-linking journey applies.
+
+
+        Authorization: Bearer <access_token>
+      security:
+        - OAuth2ClientCredentials:
+            - linking.deeplink.write
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeepLinkGenerateRequest'
+            example:
+              providerGameId: "some-game-id"
+              providerUserId: "user123456"
+              providerDisplayName: "DragonSlayer42"
+              destination:
+                type: tournament
+                resourceId: "00000000-0000-0000-0000-000000000101"
+      responses:
+        "201":
+          description: Link minted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeepLinkGenerateResponse'
+              example:
+                linkId: "dl_7f3k9q2mwz8c4n6b"
+                deepLink: "https://sbarter.kinsta.cloud/linking/confirm/dl_7f3k9q2mwz8c4n6b"
+                expiresAt: "2025-12-12T13:00:00Z"
+        "400":
+          description: >-
+            Invalid payload (including an unsupported destination type or invalid resourceId),
+            an expiresAt already in the past, or a providerGameId that resolves only to the
+            studio's default partner row and so does not identify one game
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: >-
+            Token is missing the linking.deeplink.write scope, or the `User-Agent` header is
+            missing or empty (rejected at the network edge with an HTML body)
+        "404":
+          description: >-
+            No game of this studio contests providerGameId, or the optional destination is missing,
+            belongs to another game, has expired, or is not open for participation
+        "500":
+          description: Internal server error
+
+  /v1/linking/status:
+    post:
+      tags:
+        - VGP - Link Status
+      summary: Check whether one of the studio's accounts is linked
+      operationId: getLinkingStatus
+      description: >
+        Deliberately not a user lookup. It answers about one of the **studio's own** accounts,
+        keyed by the studio's providerUserId. There is no way to ask about a Sbarter account
+        directly, and no way to enumerate.
+
+
+        An account that is not linked, belongs to another studio, or does not exist all answer the
+        same `{ "linked": false }` with status 200. That is not vagueness: splitting them into 404
+        and 200 would let a caller discover which accounts Sbarter holds by reading status codes.
+
+
+        This is how a studio learns a deep link worked, for both the deep link flow and the in-app
+        flow. The player leaves the game to tap the link and comes back, so the natural moment to
+        call this is when the game regains focus.
+
+
+        POST rather than GET because the account identifier is a provider-side string that must
+        not end up in a URL, where it would be logged by every proxy on the way.
+
+
+        Authorization: Bearer <access_token>
+      security:
+        - OAuth2ClientCredentials:
+            - linking.read
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkingStatusRequest'
+            example:
+              providerGameId: "some-game-id"
+              providerUserId: "user123456"
+      responses:
+        "200":
+          description: >-
+            Link status. Also the answer for an unknown or foreign account, as `linked: false`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkingStatusResponse'
+              examples:
+                linked:
+                  summary: Account is linked
+                  value:
+                    linked: true
+                    nickname: "player_one"
+                    avatar: "https://cdn.sbarter.com/avatars/player_one.png"
+                    linkedAt: "2025-12-12T12:45:00Z"
+                notLinked:
+                  summary: Not linked, unknown, or another studio's account
+                  value:
+                    linked: false
+        "400":
+          description: Invalid payload
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: >-
+            Token is missing the linking.read scope, or the `User-Agent` header is missing or
+            empty (rejected at the network edge with an HTML body)
+        "500":
+          description: Internal server error
+
+  /v1/webhooks/game-studio/match-result:
+    post:
+      tags:
+        - Webhook
+      summary: Receive match result webhook
+      operationId: postMatchResultWebhook
+      description: >
+        Game Studio sends match results for a previously created 1v1 match/session.
+        Retries are expected. Duplicate deliveries of the same logical result must be safe,
+        using `sessionId + matchId` as the idempotency key.
+        Authorization: Bearer <access_token>
+      security:
+        - OAuth2ClientCredentials:
+            - webhook.write
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameResultWebhookPayload'
+      responses:
+        "202":
+          description: Webhook accepted, including safe duplicate retries
+        "400":
+          description: Invalid payload
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: >-
+            Token is missing the webhook.write scope, or the `User-Agent` header is missing or
+            empty (rejected at the network edge with an HTML body)
+        "500":
+          description: Internal server error
+
+  /realms/studio_investor/protocol/openid-connect/token:
+    post:
+      security: []
+      servers:
+        - url: https://keycloak.dev.sbarter.com
+        - url: https://keycloak.test.sbarter.com
+        - url: https://id.sbarter.com
+      tags:
+        - OAuth 2.0 Client Credentials
+      summary: Obtain Access Token (Client Credentials)
+      operationId: obtainClientCredentialsToken
+      description: >
+        Issues an access token using OAuth 2.0 Client Credentials Grant.
+        The returned token_type is "Bearer".
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClientCredentialsTokenRequest'
+            examples:
+              client_credentials:
+                value:
+                  grant_type: client_credentials
+                  client_id: "<client_id>"
+                  client_secret: "<client_secret>"
+      responses:
+        "200":
+          description: Token successfully issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              examples:
+                ok:
+                  value:
+                    access_token: "<jwt>"
+                    token_type: "Bearer"
+                    expires_in: 300
+        "400":
+          description: Invalid request
+        "401":
+          description: Invalid client credentials
+        "403":
+          description: >-
+            The `User-Agent` header is missing or empty (rejected at the network edge with an
+            HTML body, before the request reaches Keycloak)
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+
+components:
+  securitySchemes:
+    OAuth2ClientCredentials:
+      type: oauth2
+      description: >
+        OAuth 2.0 Client Credentials Grant used by Game Studio when calling Sbarter webhooks.
+        clientId/clientSecret are managed in Keycloak and bound to a specific studio/game.
+      flows:
+        clientCredentials:
+          tokenUrl: https://keycloak.dev.sbarter.com/realms/studio_investor/protocol/openid-connect/token
+          scopes:
+            linking.write: Send in-app linking result to Sbarter.
+            linking.deeplink.write: Generate linking deep links.
+            linking.read: Read the link status of the studio's own provider accounts.
+            webhook.write: Send match result webhooks to Sbarter.
+
+  parameters:
+    UserAgent:
+      name: User-Agent
+      in: header
+      required: true
+      description: >
+        Any non-empty value identifying your client. Requests without a `User-Agent` header, or
+        with an empty one, are rejected at the Sbarter network edge with `403 Forbidden` and an
+        HTML body, before they reach the token endpoint or the API. Most HTTP clients send it by
+        default; set it explicitly if your client strips default headers.
+      schema:
+        type: string
+        minLength: 1
+      example: <studio>-backend/1.0
+
+  schemas:
+    InAppLinkingResultWebhook:
+      oneOf:
+        - $ref: '#/components/schemas/InAppLinkingResultAcceptedWebhook'
+        - $ref: '#/components/schemas/InAppLinkingResultRejectedWebhook'
+        - $ref: '#/components/schemas/InAppLinkingResultExpiredWebhook'
+      discriminator:
+        propertyName: status
+        mapping:
+          accepted: '#/components/schemas/InAppLinkingResultAcceptedWebhook'
+          rejected: '#/components/schemas/InAppLinkingResultRejectedWebhook'
+          expired: '#/components/schemas/InAppLinkingResultExpiredWebhook'
+
+    InAppLinkingResultAcceptedWebhook:
+      type: object
+      required: [providerGameId, providerUserId, internalId, status, confirmedAt, providerDisplayName, profileCapturedAt, profileStats]
+      properties:
+        providerGameId:
+          type: string
+          description: Stable provider-side game identifier.
+          example: "some-game-id"
+        providerUserId:
+          type: string
+          description: Stable provider-side account identifier that was verified during linking. This is not necessarily the player's display name.
+          example: "user123456"
+        internalId:
+          type: string
+          description: Sbarter internal player identifier used to map the verified provider-side account back to the correct Sbarter user.
+          example: "sbarter-12345-kudos"
+        providerDisplayName:
+          type: string
+          description: Verified human-readable provider display name captured at link time.
+          example: "PlayerOne"
+        status:
+          type: string
+          enum: [accepted]
+          example: "accepted"
+        confirmedAt:
+          type: string
+          format: date-time
+          description: Timestamp at which the partner reached the final linking decision.
+          example: "2025-12-12T12:45:10Z"
+        profileCapturedAt:
+          type: string
+          format: date-time
+          description: Timestamp at which the provider profile snapshot was captured.
+          example: "2025-12-12T12:44:58Z"
+        profileStats:
+          $ref: '#/components/schemas/ProfileStats'
+
+    InAppLinkingResultRejectedWebhook:
+      type: object
+      required: [providerGameId, providerUserId, internalId, status, confirmedAt]
+      properties:
+        providerGameId:
+          type: string
+          description: Stable provider-side game identifier.
+          example: "some-game-id"
+        providerUserId:
+          type: string
+          description: Stable provider-side account identifier that was targeted for verification.
+          example: "user123456"
+        internalId:
+          type: string
+          description: Sbarter internal player identifier used to map the provider-side account back to the correct Sbarter user.
+          example: "sbarter-12345-kudos"
+        status:
+          type: string
+          enum: [rejected]
+          example: "rejected"
+        confirmedAt:
+          type: string
+          format: date-time
+          description: Timestamp at which the partner reached the final linking decision.
+          example: "2025-12-12T12:45:10Z"
+
+    InAppLinkingResultExpiredWebhook:
+      type: object
+      required: [providerGameId, providerUserId, internalId, status, confirmedAt]
+      properties:
+        providerGameId:
+          type: string
+          description: Stable provider-side game identifier.
+          example: "some-game-id"
+        providerUserId:
+          type: string
+          description: Stable provider-side account identifier that was targeted for verification.
+          example: "user123456"
+        internalId:
+          type: string
+          description: Sbarter internal player identifier used to map the provider-side account back to the correct Sbarter user.
+          example: "sbarter-12345-kudos"
+        status:
+          type: string
+          enum: [expired]
+          example: "expired"
+        confirmedAt:
+          type: string
+          format: date-time
+          description: Timestamp at which the partner reached the final linking decision.
+          example: "2025-12-12T13:00:00Z"
+
+    GameResultStatus:
+      type: string
+      enum: [win, draw, failed, voided]
+
+    PlayerGameResult:
+      type: object
+      required: [providerUserId, internalId, outcome]
+      properties:
+        providerUserId:
+          type: string
+          description: Stable provider-side account identifier for this player. This is not necessarily the player's display name.
+          example: "Player#1234"
+        internalId:
+          type: string
+          nullable: true
+          description: Sbarter internal player identifier used to map provider-side players back to the correct Sbarter user.
+          example: "sbarter-user-12345"
+        outcome:
+          type: string
+          enum: [win, loss, draw]
+          example: "win"
+
+    GameResultWebhookPayload:
+      type: object
+      required: [providerGameId, sessionId, matchId, status, players]
+      properties:
+        providerGameId:
+          type: string
+          description: Stable provider-side game identifier.
+          example: "chess game"
+        sessionId:
+          type: string
+          format: uuid
+          description: Canonical Sbarter session identifier. Together with `matchId`, this forms the idempotency key for retries.
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        matchId:
+          type: string
+          description: Provider-side contest identifier associated with the reported result.
+          example: "contest-abc-123"
+        status:
+          $ref: '#/components/schemas/GameResultStatus'
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Optional provider-side match start timestamp.
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Optional provider-side match completion timestamp.
+        players:
+          type: array
+          minItems: 2
+          maxItems: 2
+          description: Exactly two player result entries for the current 1v1 contest flow.
+          items:
+            $ref: '#/components/schemas/PlayerGameResult'
+
+    ProfileStats:
+      type: object
+      description: Generic provider-defined profile metrics captured at link time. Keep provider-specific metrics inside this object rather than promoting them to shared top-level fields.
+      additionalProperties: {}
+      example:
+        current_trophies: 5123
+        best_trophies: 5400
+        ranked_rating: 1675
+
+    ClientCredentialsTokenRequest:
+      type: object
+      required: [grant_type, client_id, client_secret]
+      properties:
+        grant_type:
+          type: string
+          enum: [client_credentials]
+          example: client_credentials
+        client_id:
+          type: string
+          example: "<client_id>"
+        client_secret:
+          type: string
+          example: "<client_secret>"
+
+    TokenResponse:
+      type: object
+      required: [access_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+          example: "<jwt>"
+        token_type:
+          type: string
+          enum: [Bearer]
+          example: Bearer
+        expires_in:
+          type: integer
+          example: 300
+        scope:
+          type: string
+          nullable: true
+          example: "webhook.write"
+    DeepLinkGenerateRequest:
+      type: object
+      required: [providerGameId, providerUserId]
+      properties:
+        providerGameId:
+          type: string
+          description: >-
+            Stable provider-side game identifier, as registered on the studio's partner
+            configuration. Resolved to a Sbarter game here, so an id that is not configured is a
+            404 rather than a link that cannot be redeemed.
+          example: "some-game-id"
+        providerUserId:
+          type: string
+          description: >-
+            Stable provider-side account identifier the link will link. Not necessarily the
+            player's display name.
+          example: "user123456"
+        providerDisplayName:
+          type: string
+          description: >-
+            Human-readable provider display name. Strongly recommended: it is what the player is
+            shown on the confirmation screen, and it is their only way to notice that a link which
+            reached them belongs to somebody else. Without it the screen can show only the raw
+            account id.
+          example: "DragonSlayer42"
+        expiresAt:
+          type: string
+          format: date-time
+          description: >-
+            Requested deadline. Optional. Capped by Sbarter's own maximum and defaulted to it when
+            absent; a value already in the past is refused with 400. Read expiresAt in the
+            response to see what was actually stored.
+          example: "2025-12-12T13:00:00Z"
+        destination:
+          $ref: '#/components/schemas/DeepLinkDestination'
+
+    DeepLinkDestination:
+      type: object
+      description: >-
+        Optional Sbarter navigation target after the player confirms the link. Sbarter checks
+        that the target exists, belongs to the resolved game, and is open for participation.
+      required: [type, resourceId]
+      properties:
+        type:
+          type: string
+          enum: [tournament, challenge]
+        resourceId:
+          type: string
+          format: uuid
+          description: Sbarter tournament or challenge UUID, matching type; not a provider-side ID.
+
+    DeepLinkGenerateResponse:
+      type: object
+      required: [linkId, deepLink, expiresAt]
+      properties:
+        linkId:
+          type: string
+          description: Opaque single-use identifier. Not a uuid; treat it as an opaque string.
+          example: "dl_7f3k9q2mwz8c4n6b"
+        deepLink:
+          type: string
+          description: >-
+            The link to hand to the player. Hand it over whole - it must not be rebuilt from
+            linkId, and its form is environment-specific. In production it is an https universal
+            link, which opens the Sbarter app when installed and otherwise a page that leads to
+            the app store.
+          example: "https://sbarter.kinsta.cloud/linking/confirm/dl_7f3k9q2mwz8c4n6b"
+        expiresAt:
+          type: string
+          format: date-time
+          description: The deadline actually stored, after Sbarter's cap was applied.
+          example: "2025-12-12T13:00:00Z"
+
+    LinkingStatusRequest:
+      type: object
+      required: [providerGameId, providerUserId]
+      properties:
+        providerGameId:
+          type: string
+          description: Stable provider-side game identifier, as registered on the partner configuration.
+          example: "some-game-id"
+        providerUserId:
+          type: string
+          description: Stable provider-side account identifier to ask about.
+          example: "user123456"
+
+    LinkingStatusResponse:
+      type: object
+      required: [linked]
+      properties:
+        linked:
+          type: boolean
+          description: >-
+            Whether this provider account is linked to a Sbarter account in one of the studio's
+            games. False also covers accounts that are unknown or belong to another studio.
+          example: true
+        nickname:
+          type: string
+          description: The player's public Sbarter nickname. Present only when linked.
+          example: "player_one"
+        avatar:
+          type: string
+          description: URL of the player's public Sbarter avatar, when they have one.
+          example: "https://cdn.sbarter.com/avatars/player_one.png"
+        linkedAt:
+          type: string
+          format: date-time
+          description: When the link was established. Present only when linked.
+          example: "2025-12-12T12:45:00Z"

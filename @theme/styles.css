@@ -1,0 +1,230 @@
+
+/*
+ * Sbarter Developer Hub
+ * Dark-first branding
+ *
+ * Provisional violet accent:
+ * replace with official Sbarter HEX colours.
+ */
+
+:root {
+  --color-primary: #7356d8;
+  --color-primary-hover: #6044c3;
+  --link-text-color: #684bc8;
+}
+
+/* Dark mode */
+
+:root.dark {
+  --color-primary: #b8a1ff;
+  --color-primary-hover: #d0c0ff;
+
+  --link-text-color: #baa6ff;
+
+  --navbar-bg-color: #11131c;
+  --navbar-background-color: #11131c;
+
+  --sidebar-background-color: #151823;
+  --sidebar-active-background-color: #29263e;
+
+  --content-background-color: #11131c;
+
+  --heading-text-color: #ffffff;
+  --h1-text-color: #ffffff;
+  --text-color: #e0e1eb;
+
+  --border-color: #343445;
+  --bg-overlay: #1b1e2b;
+}
+
+/* Light mode */
+
+:root.light {
+  --color-primary: #684bc8;
+  --color-primary-hover: #5138a9;
+
+  --link-text-color: #684bc8;
+
+  --navbar-bg-color: #ffffff;
+  --navbar-background-color: #ffffff;
+
+  --sidebar-background-color: #f7f7fb;
+  --sidebar-active-background-color: #eee8ff;
+
+  --content-background-color: #ffffff;
+
+  --heading-text-color: #171723;
+  --h1-text-color: #171723;
+  --text-color: #303344;
+
+  --border-color: #e4e4ec;
+}
+
+/* =========================================
+   SBARTER DEVELOPER HUB
+   Full-width homepage hero
+   ========================================= */
+
+.sbarter-hero {
+  position: relative;
+  isolation: isolate;
+
+  /* Break out of Redocly's article width */
+  width: min(1120px, calc(100vw - 320px));
+  max-width: none;
+  margin-left: 50%;
+  transform: translateX(-50%);
+
+  margin-top: -4rem;
+  margin-bottom: 3rem;
+  padding: 0;
+
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Full-viewport purple background */
+.sbarter-hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+
+  top: 0;
+  bottom: 0;
+  left: 50%;
+
+  width: 100vw;
+  transform: translateX(-50%);
+
+  background: linear-gradient(
+    120deg,
+    #9d60ef 0%,
+    #884ae0 65%,
+    #743bd0 100%
+  );
+}
+
+/* Two-column hero content */
+.sbarter-hero__inner {
+  display: grid;
+  grid-template-columns: 44% 56%;
+  min-height: 510px;
+  align-items: stretch;
+}
+
+/* Phone image */
+.sbarter-hero__media {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 0;
+}
+
+.sbarter-hero__media img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 475px;
+  height: auto;
+  margin: 0;
+  object-fit: contain;
+  object-position: bottom center;
+}
+
+/* Hero text */
+.sbarter-hero__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+
+  padding: 3.5rem 2.5rem;
+  min-width: 0;
+}
+
+.sbarter-hero__eyebrow {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  color: #f2e9ff;
+  margin-bottom: 1rem;
+}
+
+.sbarter-hero__content h1 {
+  color: #ffffff !important;
+  font-size: clamp(2rem, 3vw, 3rem);
+  line-height: 1.14;
+  letter-spacing: -0.025em;
+  margin: 0 0 1.2rem;
+}
+
+.sbarter-hero__lead {
+  color: #f6efff !important;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  max-width: 560px;
+  margin: 0 0 1.7rem;
+}
+
+/* Buttons */
+.sbarter-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.sbarter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.75rem 1.4rem;
+  border-radius: 999px;
+  text-decoration: none !important;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sbarter-btn--primary {
+  background: #ffffff;
+  color: #6235c6 !important;
+}
+
+.sbarter-btn--secondary {
+  background: rgba(255,255,255,0.12);
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,0.35);
+}
+
+/* Tablet and mobile */
+@media (max-width: 1000px) {
+  .sbarter-hero {
+    width: 100%;
+    margin-left: 0;
+    transform: none;
+  }
+
+  .sbarter-hero__inner {
+    grid-template-columns: 1fr;
+  }
+
+  .sbarter-hero__content {
+    order: 1;
+    padding: 2.5rem 1.5rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  .sbarter-hero__media {
+    order: 2;
+  }
+
+  .sbarter-hero__media img {
+    max-height: 390px;
+  }
+
+  .sbarter-hero__actions {
+    justify-content: center;
+  }
+}
