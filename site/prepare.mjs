@@ -25,6 +25,7 @@ const PUBLIC_FILES = [
   'level-3-in-app-linking-flow.html',
   'logo-sbarter-color.svg',
   'sbarter-logo.png',
+  'favicon.svg',
 ];
 const SPECS = { server: 'server.yaml', client: 'client.yaml' };
 
