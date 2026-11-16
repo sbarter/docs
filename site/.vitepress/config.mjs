@@ -13,7 +13,10 @@ export default defineConfig({
   description: 'Sbarter Developers | API Documentation & Integration Guides',
   appearance: 'dark',
   lastUpdated: false,
-  head: [['link', { rel: 'icon', href: '/docs/sbarter-logo.png' }]],
+  head: [
+    ['link', { rel: 'icon', type: 'image/png', href: '/docs/favicon.png' }],
+    ['link', { rel: 'apple-touch-icon', href: '/docs/favicon.png' }],
+  ],
   srcExclude: ['index_changed*.md', 'app-manual/sbarter-app-user-manual.md'],
   themeConfig: {
     logo: '/sbarter-logo.png',
