@@ -14,8 +14,7 @@ export default defineConfig({
   appearance: 'dark',
   lastUpdated: false,
   head: [
-    ['link', { rel: 'icon', type: 'image/png', href: '/docs/favicon.png' }],
-    ['link', { rel: 'apple-touch-icon', href: '/docs/favicon.png' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/docs/favicon.svg' }],
   ],
   srcExclude: ['index_changed*.md', 'app-manual/sbarter-app-user-manual.md'],
   themeConfig: {
