@@ -51,7 +51,7 @@ Repeated requests with the same `sessionId` and equivalent payload must be handl
 
 **Operation:** [`POST /v1/webhooks/game-studio/match-result`](/server/webhook/postmatchresultwebhook) (Sbarter API; Studio calls Sbarter).
 
-The published `GameResultWebhookPayload` requires `providerGameId`, `sessionId`, `matchId`, `status` and an array of exactly two `players`. Optional `startedAt` and `finishedAt` timestamps are also supported. The callback accepts safe duplicate retries and identifies a logical result using **`sessionId + matchId`**; the successful response is `202`.
+The published `GameResultWebhookPayload` requires `providerGameId`, `sessionId`, `matchId`, `status` and an array of exactly two `players`. Optional `startedAt` and `finishedAt` timestamps are also supported. The first result for a session settles it. Resending the same result (same `matchId`, `status` and winner) is a safe retry and answers `202`; a different result for an already settled session answers `409` with `errorCode` `GI0029` and changes nothing.
 
 A result for an unknown `sessionId` is answered `404`, and a reported win without the player's `internalId` is refused.
 
@@ -74,7 +74,7 @@ The Studio must use the `webhookUrl` provided when the session was registered. S
 - [ ] Studio can create or register the requested two-player game session using the published contract.
 - [ ] Session registration is idempotent on `sessionId`.
 - [ ] Studio uses the supplied `webhookUrl` and securely submits trusted contest results.
-- [ ] Duplicate result delivery is safe, using `sessionId + matchId`.
+- [ ] Duplicate result delivery is safe; a `409` `GI0029` (different result for a settled session) is not retried.
 - [ ] Direct entry into the existing contest and waiting-for-opponent behaviour have been agreed, if required.
 - [ ] The challenge notifications (`/v1/challenge/creation`, `/invite`, `/acceptance`, `/await-opponent`, `/completion`) are implemented and answer any `2xx`.
 - [ ] Contest-ready launch prompts have an agreed delivery mechanism, if required.

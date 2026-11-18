@@ -39,9 +39,9 @@ During `POST /v1/session`, Sbarter supplies the `webhookUrl` that the Studio **m
 
 The `internalId` of each player is the value Sbarter sent for that player in `POST /v1/session`. The schema allows `null`, but **a reported win without `internalId` is refused**, so always send it. Do not infer a winner solely from `status` without evaluating the two player outcomes and the competition rules.
 
-**Authentication:** OAuth 2.0 Client Credentials bearer token with `webhook.write` scope. The documented responses are `202` (accepted, including duplicate retries), `400`, `401`, `403`, `404` (no session with this `sessionId` for your studio), `500` and `503` (temporarily unavailable; retry later).
+**Authentication:** OAuth 2.0 Client Credentials bearer token with `webhook.write` scope. The documented responses are `202` (accepted, including duplicate retries), `400`, `401`, `403`, `404` (no session with this `sessionId` for your studio), `409` with `errorCode` `GI0029` (the session is already settled with a different result), `500` and `503` (temporarily unavailable; retry later).
 
-**Idempotency:** The published contract uses `sessionId + matchId` as the logical result idempotency key. The Studio may retry delivery without creating multiple settlements. Whether an existing logical result can later be corrected or superseded is **not defined** by the provided OpenAPI operation; any correction procedure must be agreed separately.
+**Idempotency:** A session settles once, on the first result Sbarter receives. The Studio may retry delivery without creating multiple settlements: an exact repeat (same `matchId`, `status` and winner) answers `202`. A settled result cannot be corrected or superseded through this endpoint: a different result for the same session answers `409` with `errorCode` `GI0029` and the first result stands; any correction procedure must be agreed separately.
 
 ### Example payload
 
