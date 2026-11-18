@@ -47,7 +47,7 @@ Error bodies from the Sbarter API are JSON with a fixed `error` text per status.
 | `401` | Token missing, expired or issued by another environment |
 | `403` | Token of another studio, missing scope, or missing `User-Agent` (HTML body) |
 | `404` | Unknown slug, `providerGameId`, game, linking request or session |
-| `409` | Already processed: a repeat of a finished request |
+| `409` | Already processed: a repeat of a finished request. A match result that differs from the settled one adds `errorCode` `GI0029` |
 | `467` | Business rule refusal; see `errorCode` |
 | `503` | Temporarily unavailable: your studio is not onboarded on this environment yet, or a Sbarter service is down or too slow. Retry later |
 
@@ -56,13 +56,14 @@ Error bodies from the Sbarter API are JSON with a fixed `error` text per status.
 | `GI0021` | Deep link already used | Shown to the player who taps the link, never returned to your studio |
 | `GI0022` | Deep link expired or unknown | Shown to the player who taps the link, never returned to your studio |
 | `GI0023` | Game account already linked to another Sbarter player | Returned by link generation and by an `accepted` in-app decision |
+| `GI0029` | The session is already settled with a different result; the first result stands | Returned with `409` by the match-result webhook |
 | `VGP0002` | Live mode needs both a base URL and an API key | Returned when switching your studio to live without them |
 
 **Retry `503` and network errors** with a bounded exponential backoff. **Do not retry `400`, `401`, `403`, `404` or `467`** without changing the request.
 
 | Call | Safe to retry? |
 | --- | --- |
-| `POST /v1/webhooks/game-studio/match-result` | Yes: `sessionId` + `matchId` is the key; a repeat is recognised, not applied twice |
+| `POST /v1/webhooks/game-studio/match-result` | Yes: the same result again answers `202` and is not applied twice. A different result (other `matchId`, `status` or winner) for a settled session answers `409` `GI0029`; do not retry it |
 | `POST /v1/linking/in-app/{requestId}` | Yes: a request is decided once; a repeat of a finished request answers `409` |
 | `POST /v1/linking/deeplink/generate`, `POST /v1/challenges/deeplink/generate` | Each call mints a new link; retry only if you did not get one |
 | `GET` endpoints, `POST /v1/linking/status` | Yes: they change nothing |

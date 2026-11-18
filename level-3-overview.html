@@ -286,7 +286,7 @@
           <ul class="rules">
             <li><strong>Register.</strong> When both players are ready Sbarter calls <code>POST /v1/session</code> with <code>sessionId</code>, the <code>challengeId</code> of the challenge notifications, both players (your <code>providerUserId</code> + Sbarter <code>internalId</code>), the rules, <code>expiresAt</code> and a <code>webhookUrl</code>.</li>
             <li><strong>Report.</strong> When the match ends, call the <code>webhookUrl</code> with <code>sessionId</code>, your <code>matchId</code>, <code>status</code> (<code>win</code>, <code>draw</code>, <code>failed</code>, <code>voided</code>) and exactly two players with their outcome.</li>
-            <li><strong>Retries are safe.</strong> <code>sessionId</code> + <code>matchId</code> is the idempotency key: a repeated result is recognised, never applied twice.</li>
+            <li><strong>Retries are safe.</strong> A session settles once: the same result again is recognised, never applied twice, and a different result for a settled session is refused with <code>409</code> <code>GI0029</code>.</li>
           </ul>
         </article>
 

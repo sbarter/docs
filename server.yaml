@@ -868,8 +868,11 @@ paths:
       operationId: postMatchResultWebhook
       description: >
         Game Studio sends match results for a previously created 1v1 match/session.
-        Retries are expected. Duplicate deliveries of the same logical result must be safe,
-        using `sessionId + matchId` as the idempotency key.
+        The first result for a session settles it and stands.
+        Retries are expected: an exact repeat of the settled result (same `matchId`, `status`
+        and winner) is accepted with `202` and changes nothing. A different result for a session
+        that is already settled - another `matchId`, `status` or winner - is refused with `409`
+        and `errorCode` `GI0029`; the first result is kept.
         Authorization: Bearer <access_token>
       security:
         - OAuth2ClientCredentials:
@@ -894,6 +897,21 @@ paths:
             The token is missing the webhook.write scope, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
         "404":
           description: No session with this sessionId for your studio
+        "409":
+          description: >-
+            The session is already settled with a different result (errorCode GI0029).
+            Nothing changes; the first result stands. Do not retry it.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Conflict, check your request
+                  errorCode:
+                    type: string
+                    example: GI0029
         "500":
           description: Internal server error
         "503":
@@ -1247,7 +1265,7 @@ components:
         sessionId:
           type: string
           format: uuid
-          description: Canonical Sbarter session identifier. Together with `matchId`, this forms the idempotency key for retries.
+          description: Canonical Sbarter session identifier. A session settles once; a repeat of the same result is a safe retry, a different result answers 409 GI0029.
           example: "123e4567-e89b-12d3-a456-426614174000"
         matchId:
           type: string
