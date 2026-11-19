@@ -278,10 +278,11 @@ paths:
         from the Sbarter web portal or ask Sbarter.
 
 
-        A `challenge` destination is for a player who is **already linked**: it opens that
-        challenge for them, so the account must be linked first (otherwise 403). A private
-        challenge can only be opened for a player who was invited to it (otherwise 403). A
-        `tournament` destination works for a player who is not linked yet.
+        A `challenge` destination works whether the account is linked or not: a player who is not
+        linked yet is linked first and then sent to the challenge, a player who is already linked
+        is sent straight to it (only the Sbarter user who holds the account can redeem the link,
+        otherwise 403). A private challenge can only be opened for a player who was invited to it
+        (otherwise 403). A `tournament` destination works for a player who is not linked yet.
 
 
         Authorization: Bearer <access_token>
@@ -347,7 +348,7 @@ paths:
           description: >-
             Business rule refusal; the reason is the errorCode in the response body.
             GI0023 - providerUserId is already linked to a Sbarter user, so no link is minted
-            (except with a `challenge` destination, which needs a linked account).
+            (except with a `challenge` destination, which also accepts a linked account).
             A provider account can be linked to one Sbarter user at a time; check it first with
             `POST /v1/linking/status`. Several links for one account that is not linked yet are
             allowed, but once one of them is redeemed the others are refused with the same code
