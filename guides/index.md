@@ -27,7 +27,7 @@ For more technical details, see the
 | 4. Play the contest | Open the publisher's game and play | Coordinate competition window and status | Run gameplay; record contest activity and authoritative result |
 | 5. Determine outcome | View result and reward | Validate result, apply contest rules, settle | Submit contest result; support agreed recovery information if missing |
 
-The published OpenAPI contracts currently specify the account-linking, game and challenge lookup, challenge-creation deep link, challenge-notification, session-registration and contest-result interfaces. Certain interactions shown in the proposed Video Game integration journeys require additional contracts as they depend on publisher decisions. These are identified as **Under Development** below.
+The published OpenAPI contracts currently specify the account-linking, game and challenge lookup, challenge-creation deep link, challenge-notification, session-registration, contest-result and web game launch interfaces. Certain interactions shown in the proposed Video Game integration journeys require additional contracts as they depend on publisher decisions. These are identified as **Under Development** below.
 
 ## API ownership and direction
 
@@ -44,6 +44,8 @@ The published OpenAPI contracts currently specify the account-linking, game and 
 | Notify challenge creation, invitation, acceptance, opponent waiting and completion | Sbarter → Publisher | `POST /v1/challenge/creation`, `/invite`, `/acceptance`, `/await-opponent`, `/completion` |
 | Register a game session | Sbarter → Publisher | `POST /v1/session` |
 | Submit contest result | Publisher → Sbarter | `POST /v1/webhooks/game-studio/match-result` |
+| Web games: create or reuse a player account | Sbarter → Publisher | `POST /v1/sbarter/gamer/provision` |
+| Web games: redeem a player's launch code | Publisher → Sbarter | `POST /v1/game-launches/redeem` |
 
 See **API Reference → Sbarter API** and **API Reference → Game Studio API** for the authoritative schemas, parameters, authentication and response definitions.
 
@@ -60,13 +62,15 @@ See **API Reference → Sbarter API** and **API Reference → Game Studio API** 
 - **[Tournament Integration](./tournaments/):** Registration, brackets, rounds, game launch and reward handling.
 - **[Game Results & Reconciliation](./game-results/):** Server-authoritative results, missing-result paths and recovery rules.
 - **[Notifications & Deep Linking](./notifications/):** Deep links, challenge notifications and one-tap journeys between the app and game.
+- **[Web Game Launch](./web-game-launch/):** Games played inside the Sbarter app: player provisioning, match registration, launch codes and results.
 
 ## Integration status and assumptions
 
 | Area | Current documentation status |
 | --- | --- |
 | Published API operations in the table above | **Published contract**. Consult the OpenAPI reference before implementation. |
-| Direct launch into an existing publisher contest | **Under Development**. Proposed journey depends on publisher support. |
+| Direct launch into an existing publisher contest - web games played in the Sbarter app | **Published contract**. See [Web Game Launch](./web-game-launch/). |
+| Direct launch into an existing publisher contest - games played in the player's own copy of the game | **Under Development**. Proposed journey depends on publisher support. |
 | Publisher in-game challenge notifications (creation, invitation, acceptance, opponent waiting, completion) | **Published contract**. See [Notifications & Deep Linking](./notifications/). |
 | Contest-ready and tournament round notifications | **Under Development**. Requires agreed notification contract. |
 | Linking from a Sbarter-first user | **Published contract**. The player types their game account id in the Sbarter app and confirms it inside the game through the in-app validation flow. |

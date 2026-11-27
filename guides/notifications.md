@@ -14,7 +14,8 @@ The guiding principle is simple: **Sbarter manages challenges, tournaments, stak
 | Game → Sbarter contest | Player taps a private invitation or tournament promotion | Sbarter owns destination page and entry decision | **Published**: optional `destination` (`challenge` or `tournament`) on the linking deep link. A game-filtered browse destination is proposed |
 | Game → Sbarter challenge creation | Player picks a format, pledge and duration in the Video Game | Studio mints the link; the player confirms the challenge in Sbarter | **Published**: `POST /v1/challenges/deeplink/generate` |
 | Sbarter → Video Game account confirmation | Player types their game account id in Sbarter and confirms it inside the Video Game | Sbarter requests verification; Studio handles in-game confirmation | **Published validation + callback APIs** |
-| Sbarter → Video Game contest launch | Player selects **Start contest** / **Go to contest** in Sbarter | Studio owns contest entry and waiting-room behaviour | **Under Development** |
+| Sbarter → Video Game contest launch, web games | Player selects **Start match** in Sbarter; the app opens the game in its WebView | Studio redeems the launch code and owns contest entry and waiting-room behaviour | **Published**: [Web Game Launch](./web-game-launch/) |
+| Sbarter → Video Game contest launch, other games | Player selects **Start contest** / **Go to contest** in Sbarter | Studio owns contest entry and waiting-room behaviour | **Under Development** |
 | Sbarter → Studio challenge notices | Player sees a new challenge, private invite, acceptance or opponent waiting inside the Video Game | Sbarter sends the event; Studio decides in-game display | **Published**: [challenge notifications](#published-challenge-notifications) |
 | Sbarter → Studio tournament notices | Player sees next round available inside the Video Game | Sbarter generates event; Studio decides in-game display | **Under Development** |
 
@@ -85,7 +86,7 @@ Each body carries `challengeId` and `providerGameId`; `players` entries carry th
 | --- | --- | --- | --- |
 | Private 1v1 invitation | “You have been challenged” | Specific challenge in Sbarter | **Published**: `POST /v1/challenge/invite` |
 | Challenge accepted | “Opponent waiting” | Challenge details in Sbarter | **Published**: `POST /v1/challenge/acceptance` and `POST /v1/challenge/await-opponent` |
-| Both stakes locked and contest prepared | “Start contest” | Existing contest in Video Game | **Under Development**: contest provisioning and launch contract |
+| Both stakes locked and contest prepared | “Start contest” | Existing contest in Video Game | Web games: **Published** ([Web Game Launch](./web-game-launch/)); other games: **Under Development** |
 | Tournament bracket ready | “Go to contest” | Assigned first-round contest | **Under Development** |
 | Next tournament round ready | “Next round ready” / “Go to contest” | Next assigned contest | **Under Development** |
 | Missing tournament result with both players present | “Report your result” | Manual reporting screen in Sbarter | **Under Development**; reports remain Sbarter-owned |

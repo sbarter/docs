@@ -20,6 +20,7 @@ This guide explains how a **Video Game Studio** reports authoritative contest re
 | --- | --- | --- | --- |
 | Register a two-player game session | Sbarter → Video Game Studio | [`POST /v1/session`](/client/session/paths/~1v1~1session/post) | **Published**. |
 | Submit the authoritative result | Video Game Studio → Sbarter | [`POST /v1/webhooks/game-studio/match-result`](/server/webhook/postmatchresultwebhook) | **Published**. |
+| Web games: return your match id at registration, identify players by `playerId` | Both directions | [`POST /v1/session`](/client/session/paths/~1v1~1session/post), [`POST /v1/webhooks/game-studio/match-result`](/server/webhook/postmatchresultwebhook) | **Published**. The result must quote the registered `matchId` and is final: no dispute or manual result path. See [Web Game Launch](./web-game-launch/). |
 | Retrieve a result from the Studio after a missed callback | Sbarter → Video Game Studio | No published operation | **Under Development**. |
 | Request login/presence evidence during a contest window | Sbarter → Video Game Studio | No published operation | **Under Development**. |
 | Request manual tournament results from players | Sbarter app / proposed in-game notification | No published Studio API operation | **Under Development**; any Studio notification contract is separate. |

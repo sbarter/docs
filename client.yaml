@@ -34,8 +34,12 @@ tags:
     description: Account linking initiation via in-app confirmation (Sbarter -> Game Studio)
   - name: Provider Profile
     description: Current provider profile retrieval for already-linked accounts (Sbarter -> Game Studio)
+  - name: Web Game - Player Provisioning
+    description: Player account creation for web games (Sbarter -> Game Studio)
   - name: Session
     description: Session registration on Game Studio side (Sbarter -> Game Studio)
+  - name: Web Game - Launch
+    description: The game page the Sbarter app opens in its WebView (Sbarter app -> Game Studio)
   - name: Challenge
     description: Challenge lifecycle notifications (Sbarter -> Game Studio)
 
@@ -112,6 +116,48 @@ paths:
         "500":
           description: Internal server error
 
+  /v1/sbarter/gamer/provision:
+    post:
+      tags: [Web Game - Player Provisioning]
+      summary: Create or reuse a player account for a web game
+      operationId: provisionPlayer
+      description: >
+        Web games only. Sbarter asks the Game Studio to create a game account for a Sbarter player,
+        so the player can open the game without signing up in it. There is no account linking for
+        web games: Sbarter calls this before it registers the player's first match.
+
+
+        `playerId` is an opaque id Sbarter issues per player and per studio. It never changes for
+        that player, it is not the player's Sbarter user id, and another studio gets a different
+        one for the same player. Use it as the account's key: from now on it is the player's
+        `providerUserId` in every call, in both directions. No personal data is sent and none is
+        expected back.
+
+
+        Idempotent on `playerId`: a repeat for an account that exists answers `200` and changes
+        nothing. Sbarter repeats the call after a timeout or a 5xx.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProvisionPlayerRequest'
+      responses:
+        "200":
+          description: The account already existed (safe repeat)
+        "201":
+          description: The account was created
+        "400":
+          description: Invalid request, or a providerGameId that is not a web game of this studio
+        "401":
+          description: Missing or invalid API key
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+
   /v1/session:
     post:
       tags: [Session]
@@ -119,8 +165,16 @@ paths:
       description: >
         Registers a new 1v1 game session on the Game Studio side, linked to an internal
         Sbarter sessionId.
-        This flow assumes both players have already linked and validated their
-        provider-side accounts before session registration begins.
+        For games played in the player's own copy of the game, this flow assumes both players have
+        already linked and validated their provider-side accounts before session registration
+        begins. For web games, both players were provisioned instead
+        (`POST /v1/sbarter/gamer/provision`), and each player's `internalId` and `providerUserId`
+        both carry that player's `playerId`.
+        Players are listed by seat: seat 1 (the challenge creator) first, seat 2 second. The seat
+        is what a redeemed launch code later authorises.
+        The response carries the Game Studio's own id of the match (`matchId`). It is required for
+        web games: Sbarter returns it to the game when a player's launch code is redeemed, and a
+        result must quote the same id. Return the same `matchId` on a repeated registration.
         The provided webhookUrl MUST be used when sending results back to Sbarter.
         `sessionId` acts as the idempotency key for repeated registration attempts.
         Repeated calls with the same `sessionId` and the same effective payload must be
@@ -138,8 +192,16 @@ paths:
       responses:
         "200":
           description: Session already registered for the same sessionId (idempotent replay)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionCreateResponse'
         "201":
           description: Session successfully registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionCreateResponse'
         "400":
           description: Invalid request
         "401":
@@ -287,6 +349,46 @@ paths:
         "500":
           description: Internal server error
 
+  /your-launch-url:
+    post:
+      tags: [Web Game - Launch]
+      summary: Open the game for a player (WebView form POST)
+      operationId: launchWebGame
+      description: >
+        Web games only. Not an API call from Sbarter's servers: when a player taps **Start match**,
+        the Sbarter app opens this page in its WebView with an HTTPS form POST. The path above is a
+        placeholder - the real address is the HTTPS launch URL registered for the game at
+        onboarding, and only HTTPS origins you registered are allowed in the WebView.
+
+
+        The body carries a one-time `launchCode` and its `codeVerifier`. Neither identifies the
+        player or the match on its own: redeem them from your backend with
+        `POST /v1/game-launches/redeem` (Sbarter API) and take the match, the player and the seat
+        from that answer only. Never trust a match id, player id or seat in the page URL.
+
+
+        After a successful redeem, start a session for that seat (for example a `Secure`,
+        `HttpOnly` cookie scoped to your host) and redirect to a clean game URL without the code.
+        Enforce the seat on every gameplay request and WebSocket. A player who opens the game again
+        arrives with a new code; replace their previous play session for that seat.
+
+
+        The code lives 60 seconds and works once. If the redeem is refused, show your own page
+        with a way back to the app; the player gets a fresh code by tapping **Start match** again.
+        Keep both values out of URLs, logs and analytics.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WebGameLaunchForm'
+      responses:
+        "303":
+          description: Redeemed; redirect to the game page for the authorised seat
+        "200":
+          description: Your own page (game page after redeem, or an error page when the redeem was refused)
+
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -411,6 +513,43 @@ components:
           description: Sbarter internal player identifier used to map provider-side players back to the correct Sbarter user.
           example: "user-12345"
 
+    ProvisionPlayerRequest:
+      type: object
+      required: [playerId, providerGameId]
+      properties:
+        playerId:
+          type: string
+          format: uuid
+          description: >-
+            Opaque Sbarter id of the player at your studio. Stable for this player, different at
+            every studio, never the Sbarter user id. Use it as the account's providerUserId.
+          example: "8a4f1c2e-5b6d-4e7f-9a0b-1c2d3e4f5a6b"
+        providerGameId:
+          type: string
+          description: Stable provider-side game identifier of the web game.
+          example: "some-web-game"
+
+    SessionCreateResponse:
+      type: object
+      properties:
+        matchId:
+          type: string
+          description: >-
+            Your own id of the match. Required for web games, optional otherwise. The same value
+            must come back on a repeated registration of the same sessionId, and in the result.
+          example: "match-7f3a91"
+
+    WebGameLaunchForm:
+      type: object
+      required: [launchCode, codeVerifier]
+      properties:
+        launchCode:
+          type: string
+          description: One-time launch code, valid for 60 seconds.
+        codeVerifier:
+          type: string
+          description: The PKCE verifier the app generated for this code (RFC 7636, S256).
+
     SessionCreateRequest:
       type: object
       required: [providerGameId, sessionId, players, expiresAt, webhookUrl]
@@ -433,7 +572,10 @@ components:
           type: array
           minItems: 2
           maxItems: 2
-          description: Exactly two players participating in the current Level 3 1v1 session.
+          description: >-
+            Exactly two players participating in the current Level 3 1v1 session, seat 1 (the
+            challenge creator) first. For web games, internalId and providerUserId are both the
+            player's playerId.
           items:
             $ref: '#/components/schemas/PlayerMatchEntry'
         rules:

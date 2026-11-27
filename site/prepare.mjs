@@ -23,6 +23,7 @@ const PUBLIC_FILES = [
   'level-3-overview.html',
   'level-3-deeplink-flow.html',
   'level-3-in-app-linking-flow.html',
+  'level-3-web-game-launch-flow.html',
   'logo-sbarter-color.svg',
   'sbarter-logo.png',
   'favicon.svg',
