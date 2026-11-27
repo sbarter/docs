@@ -13,6 +13,8 @@ info:
 
     - Match result webhooks
 
+    - Web game launch code redemption
+
     - The studio's games and their challenge settings
 
     - The studio's active challenges and the challenge types
@@ -81,6 +83,7 @@ info:
     | `POST /v1/webhooks/game-studio/match-result` | Yes - `sessionId` + `matchId` is the key; a repeat is recognised, not applied twice |
     | `POST /v1/linking/in-app/{requestId}` | Yes - a request is decided once; a repeat of a finished request answers `409` |
     | `POST /v1/linking/deeplink/generate`, `POST /v1/challenges/deeplink/generate` | Each call mints a new link; retry only if you did not get one |
+    | `POST /v1/game-launches/redeem` | No - a launch code works once. If the answer is lost, the player taps **Start match** again for a new code |
     | `GET` endpoints, `POST /v1/linking/status` | Yes - they change nothing |
 
 
@@ -91,8 +94,9 @@ info:
     not your `providerGameId`.
 
 
-    Step-by-step flows with sequence diagrams: *In-App Linking Flow* and *Deep Link Flow* (links
-    at the top of this page); challenge creation from the game is on *How Level 3 Works*.
+    Step-by-step flows with sequence diagrams: *In-App Linking Flow*, *Deep Link Flow* and *Web
+    Game Launch Flow* (links at the top of this page); challenge creation from the game is on *How
+    Level 3 Works*.
 
 
     Every grant listed under OAuth2ClientCredentials is issued separately. A studio may hold one
@@ -136,6 +140,8 @@ tags:
     description: Game Studio -> Sbarter lookup of its own games and their challenge settings
   - name: VGP - Challenges
     description: Game Studio -> Sbarter lookup of the active challenges in its games
+  - name: Web Game Launch
+    description: Game Studio -> Sbarter redemption of a player's launch code (web games)
   - name: Webhook
     description: Game Studio -> Sbarter webhook endpoints (game results)
   - name: OAuth 2.0 Client Credentials
@@ -860,6 +866,70 @@ paths:
         "503":
           description: Temporarily unavailable - retry later
 
+  /v1/game-launches/redeem:
+    post:
+      tags:
+        - Web Game Launch
+      summary: Redeem a player's launch code
+      operationId: redeemGameLaunch
+      description: >
+        Web games only. The Sbarter app opened your launch URL with a form POST carrying
+        `launchCode` and `codeVerifier`. Your backend sends both here and learns which match, which
+        player and which seat the code was issued for. Take them from this answer only, never from
+        the page URL.
+
+
+        A code is issued to one participant of one match, lives 60 seconds and is consumed by the
+        first successful redeem; a second redeem of the same code is refused. A newer code for the
+        same seat replaces an unused older one. A code issued for another studio's game is refused
+        like an unknown one.
+
+
+        Every refusal of the code itself - unknown, expired, already used, issued for a game that
+        is not yours, or a `codeVerifier` that does not match - is the same `467` with `errorCode`
+        `GI0030`, so a code cannot be probed. Show the player a way back to the app; tapping
+        **Start match** again issues a fresh code.
+
+
+        Authorization: Bearer <access_token>
+      security:
+        - OAuth2ClientCredentials:
+            - launch.redeem
+      parameters:
+        - $ref: '#/components/parameters/UserAgent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameLaunchRedeemRequest'
+      responses:
+        "200":
+          description: Redeemed. The code cannot be used again.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameLaunchRedeemResponse'
+        "400":
+          description: Body does not match the schema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: Missing or invalid OAuth2 token
+        "403":
+          description: >-
+            The token is missing the launch.redeem scope, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
+        "467":
+          description: GI0030 - the launch code is unknown, expired, already used, not for your game, or the verifier does not match
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessErrorResponse'
+        "503":
+          description: Temporarily unavailable - retry later with the same code while it is still valid
+
   /v1/webhooks/game-studio/match-result:
     post:
       tags:
@@ -870,6 +940,14 @@ paths:
         Game Studio sends match results for a previously created 1v1 match/session.
         Retries are expected. Duplicate deliveries of the same logical result must be safe,
         using `sessionId + matchId` as the idempotency key.
+
+
+        Web games: `matchId` must be the id you returned when Sbarter registered the session, and
+        each player is identified by their `playerId` (in both `providerUserId` and `internalId`).
+        A result with another `matchId` is refused with `409`. The result you send is final -
+        there is no dispute or manual result path for web games.
+
+
         Authorization: Bearer <access_token>
       security:
         - OAuth2ClientCredentials:
@@ -894,6 +972,10 @@ paths:
             The token is missing the webhook.write scope, or the User-Agent header is missing or empty (rejected at the network edge with an HTML body)
         "404":
           description: No session with this sessionId for your studio
+        "409":
+          description: >-
+            A different result was already accepted for this session (GI0029), or - for a web game -
+            the matchId is not the one returned at session registration
         "500":
           description: Internal server error
         "503":
@@ -1078,6 +1160,7 @@ components:
             linking.deeplink.write: Generate linking deep links.
             linking.read: Read the link status of the studio's own provider accounts.
             webhook.write: Send match result webhooks to Sbarter.
+            launch.redeem: Redeem a player's web game launch code.
 
   schemas:
     ErrorResponse:
@@ -1103,7 +1186,8 @@ components:
           type: string
           description: >-
             Machine-readable reason. GI0023 - the provider account is already linked to a Sbarter
-            player.
+            player. GI0030 - the launch code cannot be redeemed (unknown, expired, already used, not
+            for your game, or the verifier does not match).
           example: "GI0023"
         additionalData:
           type: object
@@ -1236,6 +1320,58 @@ components:
           enum: [win, loss, draw]
           example: "win"
 
+    GameLaunchRedeemRequest:
+      type: object
+      required: [launchCode, codeVerifier]
+      properties:
+        launchCode:
+          type: string
+          description: The launchCode field of the form POST your launch URL received.
+          example: "lc_q3Zr8Vt0aK7mN2pX5sW1yB4dF6hJ9cE"
+        codeVerifier:
+          type: string
+          minLength: 43
+          maxLength: 128
+          description: The codeVerifier field of the same form POST (RFC 7636, S256).
+          example: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+
+    GameLaunchRedeemResponse:
+      type: object
+      required: [providerGameId, sessionId, matchId, playerId, seat, matchExpiresAt]
+      properties:
+        providerGameId:
+          type: string
+          description: Stable provider-side game identifier.
+          example: "some-web-game"
+        sessionId:
+          type: string
+          format: uuid
+          description: Sbarter session the match belongs to - the sessionId of the registration.
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        matchId:
+          type: string
+          description: Your match id, as you returned it when Sbarter registered the session.
+          example: "match-7f3a91"
+        playerId:
+          type: string
+          format: uuid
+          description: >-
+            The player's opaque id at your studio - the id you provisioned the account under and
+            the player's providerUserId.
+          example: "8a4f1c2e-5b6d-4e7f-9a0b-1c2d3e4f5a6b"
+        seat:
+          type: integer
+          enum: [1, 2]
+          description: >-
+            The seat this player may take: 1 is the challenge creator, 2 the opponent - the order of
+            players in the session registration.
+          example: 2
+        matchExpiresAt:
+          type: string
+          format: date-time
+          description: End of the play window; the session registration's expiresAt.
+          example: "2025-12-12T13:00:00Z"
+
     GameResultWebhookPayload:
       type: object
       required: [providerGameId, sessionId, matchId, status, players]
@@ -1251,7 +1387,9 @@ components:
           example: "123e4567-e89b-12d3-a456-426614174000"
         matchId:
           type: string
-          description: Provider-side contest identifier associated with the reported result.
+          description: >-
+            Provider-side contest identifier associated with the reported result. For web games it
+            must equal the matchId returned at session registration.
           example: "contest-abc-123"
         status:
           $ref: '#/components/schemas/GameResultStatus'

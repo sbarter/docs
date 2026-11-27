@@ -32,6 +32,8 @@
       label: Game Results & Reconciliation
     - page: guides/notifications.md
       label: Notifications & Deep Linking
+    - page: guides/web-game-launch.md
+      label: Web Game Launch
 
 - group: Sbarter App – User Manual
   expanded: false

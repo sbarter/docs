@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Level 3 Web Game Launch Flow</title>
+    <link
+      href="https://fonts.googleapis.com/css?family=Montserrat:400,700|Roboto:300,400,700"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --panel: #ffffff;
+        --text: #1f2937;
+        --muted: #5b6472;
+        --border: #d8dee8;
+        --accent: #32329f;
+        --accent-soft: #eef0ff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #eef2ff 0%, var(--bg) 28%);
+        color: var(--text);
+        font-family: "Roboto", sans-serif;
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 20px 56px;
+      }
+
+      .hero {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 28px;
+        box-shadow: 0 18px 50px rgba(50, 50, 159, 0.08);
+      }
+
+      .eyebrow {
+        display: inline-block;
+        margin: 0 0 10px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      h1 {
+        font-size: clamp(1.9rem, 4vw, 3rem);
+        line-height: 1.05;
+      }
+
+      h2 {
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+      }
+
+      p {
+        margin: 12px 0 0;
+        line-height: 1.65;
+        color: var(--muted);
+      }
+
+      .meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+        margin-top: 22px;
+      }
+
+      .meta-card,
+      .section {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+      }
+
+      .meta-card {
+        padding: 16px 18px;
+      }
+
+      .meta-card strong {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--text);
+      }
+
+      .content {
+        margin-top: 22px;
+        display: grid;
+        gap: 18px;
+      }
+
+      .section {
+        padding: 22px;
+        overflow: hidden;
+      }
+
+      .section p:first-of-type {
+        margin-top: 0;
+      }
+
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 18px;
+        color: var(--accent);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .back-link:hover {
+        text-decoration: underline;
+      }
+
+      .mermaid {
+        margin-top: 14px;
+        padding: 8px 0 0;
+        overflow-x: auto;
+      }
+
+      code {
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: #f3f4f6;
+        color: #111827;
+        font-size: 0.95em;
+      }
+
+      .plain-box {
+        margin-top: 18px;
+        padding: 16px 18px;
+        border-radius: 16px;
+        background: #f8fafc;
+        border: 1px solid var(--border);
+      }
+
+      .plain-box strong {
+        color: var(--text);
+      }
+
+      ul.rules {
+        margin: 14px 0 0;
+        padding-left: 20px;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      ul.rules li + li {
+        margin-top: 8px;
+      }
+
+      @media (max-width: 640px) {
+        .hero,
+        .section {
+          padding: 20px;
+          border-radius: 16px;
+        }
+
+        .page {
+          padding: 20px 14px 40px;
+        }
+      }
+      table.codes { width: 100%; border-collapse: collapse; margin: 12px 0 4px; font-size: 14px; }
+      table.codes th, table.codes td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+      table.codes th { background: #f8fafc; }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <a class="back-link" href="./index.html">&larr; Back To API Docs</a>
+
+      <section class="hero">
+        <span class="eyebrow">Level 3 Flow</span>
+        <h1>Web Game Launch</h1>
+        <p>
+          A web game is played inside the Sbarter app. The player never signs up in the game and never
+          links an account: Sbarter creates the game account server to server. When both players are
+          ready, each taps <em>Start match</em>, the app opens the game page in its WebView with a
+          one-time launch code, and the game's backend redeems the code to learn which match, player
+          and seat it is.
+        </p>
+
+        <div class="plain-box">
+          <strong>Scope:</strong>
+          Only a redeemed launch code lets a player in. A copied game URL, a code without its verifier,
+          a reused code, the other player's seat and another studio's code all fail.
+        </div>
+
+        <div class="meta">
+          <div class="meta-card">
+            <strong>Sbarter calls you</strong>
+            <p><code>POST /v1/sbarter/gamer/provision</code>, <code>POST /v1/session</code> (return <code>matchId</code>)</p>
+          </div>
+          <div class="meta-card">
+            <strong>The app opens your page</strong>
+            <p>Form POST to your launch URL: <code>launchCode</code>, <code>codeVerifier</code></p>
+          </div>
+          <div class="meta-card">
+            <strong>You call Sbarter</strong>
+            <p><code>POST /v1/game-launches/redeem</code>, then the match result</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="content">
+        <article class="section">
+          <h2>Before the first match</h2>
+          <ul class="rules">
+            <li><strong>Launch URL.</strong> The HTTPS page the app opens for your game, per environment, given to Sbarter at onboarding. Only HTTPS origins you registered are allowed in the WebView. It is not your website link.</li>
+            <li><strong>Client credentials</strong> with <code>launch.redeem</code> and <code>webhook.write</code>, created in the Sbarter web portal. The token's <code>scope</code> claim shows what you hold.</li>
+            <li><strong>Base URL and API key</strong> for Sbarter &rarr; studio calls, entered in the Studio Web Portal, as for every Level 3 game.</li>
+          </ul>
+        </article>
+
+        <article class="section">
+          <h2>Sequence Diagram</h2>
+          <div class="mermaid">
+sequenceDiagram
+    participant A as Player A (creator)
+    participant B as Player B
+    participant App as Sbarter app
+    participant Sbarter as Sbarter API
+    participant Studio as Game Studio backend
+    participant Page as Game page (WebView)
+
+    Note over A,B: B accepts A's challenge, both tap Ready
+    Sbarter->>Studio: POST /v1/sbarter/gamer/provision (playerId of A, then of B)
+    Studio-->>Sbarter: 201 created (200 if it existed)
+    Sbarter->>Studio: POST /v1/session (sessionId, players by seat, expiresAt, webhookUrl)
+    Studio-->>Sbarter: 201 matchId
+    Sbarter-->>App: Match ready, Start match shown
+
+    B->>App: Tap Start match
+    App->>App: New codeVerifier, S256 codeChallenge
+    App->>Sbarter: Request a launch code (B's Sbarter login, codeChallenge)
+    Sbarter-->>App: launchUrl, launchCode (60 s)
+    App->>Page: HTTPS form POST launchCode + codeVerifier
+    Page->>Studio: Forward both
+    Studio->>Sbarter: POST /v1/game-launches/redeem
+    Sbarter-->>Studio: 200 matchId, playerId, seat 2, matchExpiresAt
+    Studio-->>Page: Seat session (cookie), redirect to clean game URL
+    Note over A,Page: A does the same with their own code and gets seat 1
+
+    Studio->>Sbarter: POST webhookUrl (sessionId, matchId, result by playerId)
+    Sbarter-->>Studio: 202
+    Page-->>App: Return navigation closes the WebView
+    App->>Sbarter: Refresh the challenge card
+          </div>
+        </article>
+
+        <article class="section">
+          <h2>Player accounts</h2>
+          <ul class="rules">
+            <li><code>playerId</code> is an opaque UUID per player <strong>and per studio</strong>: stable for that player, different at every studio, never the Sbarter user id. No personal data comes with it.</li>
+            <li>Use it as the account key. From then on it is the player's <code>providerUserId</code> in every call, both ways.</li>
+            <li>The call is idempotent on <code>playerId</code>: <code>201</code> the first time, <code>200</code> and no change on a repeat. Sbarter repeats it after a timeout or a 5xx.</li>
+          </ul>
+        </article>
+
+        <article class="section">
+          <h2>Match registration</h2>
+          <ul class="rules">
+            <li>Each player's <code>internalId</code> and <code>providerUserId</code> both carry the player's <code>playerId</code>.</li>
+            <li>Players are ordered by seat: <strong>1</strong> is the challenge creator, <strong>2</strong> the opponent.</li>
+            <li>Answer with <code>{"matchId": "..."}</code> - required for web games - and the same <code>matchId</code> when the same <code>sessionId</code> is registered again.</li>
+            <li>The match is offered to the players only after registration succeeded.</li>
+          </ul>
+        </article>
+
+        <article class="section">
+          <h2>Launch and redeem</h2>
+          <ul class="rules">
+            <li>Your page receives <code>launchCode</code> and <code>codeVerifier</code> as <code>application/x-www-form-urlencoded</code>. Send both to <code>POST /v1/game-launches/redeem</code> from your backend.</li>
+            <li><strong>Trust only the redeem answer</strong> (<code>providerGameId</code>, <code>sessionId</code>, <code>matchId</code>, <code>playerId</code>, <code>seat</code>, <code>matchExpiresAt</code>). Ids in a page URL identify nothing.</li>
+            <li>Start a session for that seat (e.g. a <code>Secure</code>, <code>HttpOnly</code> cookie scoped to your host), redirect to a clean URL, and enforce the seat on every gameplay request and WebSocket.</li>
+            <li>A code lives <strong>60 seconds</strong> and works once. A player who opens the game again comes with a new code: replace their previous play session for that seat.</li>
+            <li>End access when the match is over or <code>matchExpiresAt</code> has passed. Keep the code and the verifier out of URLs, logs and analytics.</li>
+          </ul>
+        </article>
+
+        <article class="section">
+          <h2>Errors from redeem</h2>
+          <table class="codes">
+            <tr><th>Status</th><th>Meaning</th><th>What to do</th></tr>
+            <tr><td><code>467</code> <code>GI0030</code></td><td>Unknown, expired or used code, a code for a game that is not yours, or a verifier that does not match - one answer for all, so codes cannot be probed</td><td>Show a way back to the app; the player taps Start match again</td></tr>
+            <tr><td>400</td><td>Body does not match the schema</td><td>Fix the request</td></tr>
+            <tr><td>401 / 403</td><td>Token missing or expired / no <code>launch.redeem</code>, or no <code>User-Agent</code> (HTML body)</td><td>Fix credentials</td></tr>
+            <tr><td>503</td><td>Sbarter temporarily unavailable</td><td>Retry with the same code while it is valid</td></tr>
+          </table>
+          <p>Do not repeat a redeem that may have succeeded: the code is consumed. If the answer was lost, the player gets a new code by tapping Start match again.</p>
+        </article>
+
+        <article class="section">
+          <h2>Result</h2>
+          <ul class="rules">
+            <li>Send it to the <code>webhookUrl</code> of the registration, as for any Level 3 game.</li>
+            <li><code>matchId</code> must be the one you returned at registration; another one is refused with <code>409</code>.</li>
+            <li>Identify each player by their <code>playerId</code> in <code>providerUserId</code> and <code>internalId</code>.</li>
+            <li>Your result is <strong>final</strong>: web games have no dispute and no manual result reporting in Sbarter. Retries are safe on <code>sessionId</code> + <code>matchId</code>.</li>
+          </ul>
+        </article>
+      </section>
+    </main>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "base",
+        themeVariables: {
+          primaryColor: "#eef0ff",
+          primaryTextColor: "#1f2937",
+          primaryBorderColor: "#32329f",
+          lineColor: "#4b5563",
+          secondaryColor: "#ffffff",
+          tertiaryColor: "#f8fafc",
+          noteBkgColor: "#f8fafc",
+          noteBorderColor: "#cbd5e1",
+          actorBorder: "#32329f",
+          actorBkg: "#eef0ff",
+          actorTextColor: "#111827",
+          signalColor: "#374151"
+        }
+      });
+    </script>
+  </body>
+</html>
